@@ -1,0 +1,32 @@
+stages:
+  - deploy
+
+deploy_develop:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    # Installation du client SSH
+    - apk add --no-cache openssh-client
+    # Création du répertoire .ssh
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    # On ajoute la clé privée SSH nommée gitlab_ccs
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/gitlab_ccs
+    - chmod 600 ~/.ssh/gitlab_ccs
+    # On ajoute le serveur aux hôtes connus
+    - ssh-keyscan -p 6543 209.142.65.178 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      ssh -i ~/.ssh/gitlab_ccs -p 6543 sunofamap@209.142.65.178 "
+        cd canaanapp.com && \
+        git pull origin develop && \
+        scl enable php82 -- composer install && \
+        scl enable php82 -- php artisan migrate --force && \
+        scl enable php82 -- php artisan optimize:clear
+      "
+  only:
+    - develop
+  environment:
+    name: production
+    url: https://canaanapp.com

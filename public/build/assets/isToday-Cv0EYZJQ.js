@@ -1,0 +1,1 @@
+import{c as s,n as c,s as r,t as u}from"./format-pbuogrCK.js";function i(t){return s(t,Date.now())}function f(t,n,a){const[e,o]=c(a==null?void 0:a.in,t,n);return+r(e)==+r(o)}function m(t){return+u(t)<Date.now()}function w(t,n){return f(s(t,t),i(t))}export{w as a,m as i};

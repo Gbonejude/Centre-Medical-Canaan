@@ -1,0 +1,191 @@
+<?php
+
+namespace App\Http\Controllers\BackOffice\Hospital;
+
+use App\Http\Controllers\Controller;
+use App\Models\Doctor;
+use App\Models\MedicalService;
+use App\Models\Specialty;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
+
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class DoctorController extends Controller implements HasMiddleware
+{
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST'),
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $query = Doctor::with(['user', 'medicalServices', 'specialties']);
+
+        if ($request->search) {
+            $query->whereHas('user', function($q) use ($request) {
+                $q->where('firstname', 'like', '%' . $request->search . '%')
+                  ->orWhere('lastname', 'like', '%' . $request->search . '%');
+            })->orWhereHas('specialties', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        return Inertia::render('backoffice/doctors/index', [
+            'doctors' => $query->latest()->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('backoffice/doctors/create', [
+            'services' => MedicalService::where('is_active', true)->get(),
+            'specialties' => Specialty::where('is_active', true)->get()
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:medical_services,id',
+            'specialty_ids' => 'required|array|min:1',
+            'specialty_ids.*' => 'exists:specialties,id',
+            'bio' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'gender' => 'nullable|string',
+        ]);
+
+        DB::transaction(function() use ($validated) {
+            $user = User::create([
+                'firstname' => $validated['firstname'],
+                'lastname' => $validated['lastname'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ]);
+
+            // Assignation automatique du rôle DOCTOR
+            $user->assignRole('DOCTOR');
+
+            $doctor = Doctor::create([
+                'user_id' => $user->id,
+                'medical_service_id' => $validated['service_ids'][0],
+                'specialty_id' => $validated['specialty_ids'][0],
+                'bio' => $validated['bio'],
+                'is_available' => true,
+            ]);
+
+            $doctor->medicalServices()->sync($validated['service_ids']);
+            $doctor->specialties()->sync($validated['specialty_ids']);
+        });
+
+        return redirect()->route('doctors.index')->with('success', 'Médecin ajouté avec succès.');
+    }
+
+    public function show($id)
+    {
+        $doctor = Doctor::with(['user', 'medicalServices', 'specialties'])->findOrFail($id);
+        
+        return Inertia::render('backoffice/doctors/show', [
+            'doctor' => $doctor,
+            'userAvatar' => $doctor->user->hasMedia('user') ? $doctor->user->getFirstMediaUrl('user') : null,
+        ]);
+    }
+
+    public function edit($id)
+    {
+        $doctor = Doctor::with(['user', 'medicalServices', 'specialties'])->findOrFail($id);
+        
+        return Inertia::render('backoffice/doctors/edit', [
+            'doctor' => $doctor,
+            'services' => MedicalService::where('is_active', true)->get(),
+            'specialties' => Specialty::where('is_active', true)->get()
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $doctor = Doctor::findOrFail($id);
+        
+        $validated = $request->validate([
+            'firstname' => 'required|string|max:255',
+            'lastname' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$doctor->user_id,
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:medical_services,id',
+            'specialty_ids' => 'required|array|min:1',
+            'specialty_ids.*' => 'exists:specialties,id',
+            'bio' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'gender' => 'nullable|string',
+            'is_available' => 'boolean',
+        ]);
+
+        DB::transaction(function() use ($validated, $doctor) {
+            $doctor->user->update([
+                'firstname' => $validated['firstname'],
+                'lastname' => $validated['lastname'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? $doctor->user->phone,
+                'gender' => $validated['gender'] ?? $doctor->user->gender,
+            ]);
+
+            // S'assurer qu'il a toujours le rôle DOCTOR
+            if (!$doctor->user->hasRole('DOCTOR')) {
+                $doctor->user->assignRole('DOCTOR');
+            }
+
+            $doctor->update([
+                'medical_service_id' => $validated['service_ids'][0],
+                'specialty_id' => $validated['specialty_ids'][0],
+                'bio' => $validated['bio'],
+                'is_available' => $validated['is_available'] ?? true,
+            ]);
+
+            $doctor->medicalServices()->sync($validated['service_ids']);
+            $doctor->specialties()->sync($validated['specialty_ids']);
+        });
+
+        return redirect()->route('doctors.index')->with('success', 'Informations du médecin mises à jour.');
+    }
+
+    public function destroy($id)
+    {
+        $doctor = Doctor::findOrFail($id);
+        $user = $doctor->user;
+        
+        DB::transaction(function() use ($doctor, $user) {
+            $doctor->delete();
+            if ($user) {
+                $user->removeRole('DOCTOR');
+                $user->delete();
+            }
+        });
+        
+        return back()->with('success', 'Médecin supprimé avec succès.');
+    }
+
+    public function toggleAvailability($id)
+    {
+        $doctor = Doctor::with('user')->findOrFail($id);
+        $doctor->is_available = !$doctor->is_available;
+        $doctor->save();
+
+        $status = $doctor->is_available ? 'disponible' : 'indisponible';
+        return back()->with('success', "Le Dr. {$doctor->user->lastname} est désormais {$status}.");
+    }
+}
