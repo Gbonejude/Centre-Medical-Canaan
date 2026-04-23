@@ -50,7 +50,7 @@ class AppointmentController extends Controller implements HasMiddleware
             'appointments'     => $query->latest()->get(),
             'stats'            => $stats,
             'isDoctor'         => $isDoctor,
-            'availableDoctors' => Doctor::with(['user', 'specialty'])->get(),
+            'availableDoctors' => Doctor::with(['user', 'specialty'])->where('is_available', true)->get(),
         ]);
     }
 
@@ -131,7 +131,7 @@ class AppointmentController extends Controller implements HasMiddleware
         $appointment->load(['patient', 'doctor', 'medicalService']);
         return Inertia::render('backoffice/appointments/show', [
             'appointment' => $appointment,
-            'doctors' => Doctor::with('user')->where('medical_service_id', $appointment->medical_service_id)->get(),
+            'doctors' => Doctor::with('user')->where('medical_service_id', $appointment->medical_service_id)->where('is_available', true)->get(),
         ]);
     }
 

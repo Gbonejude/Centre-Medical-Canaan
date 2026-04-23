@@ -110,8 +110,8 @@
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="filteredAppointments.length > 0">
-                                <tr v-for="app in filteredAppointments" :key="app.id" class="user-row">
+                            <tbody v-if="paginatedAppointments.length > 0">
+                                <tr v-for="app in paginatedAppointments" :key="app.id" class="user-row">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-name">{{ app.patient?.lastname }} {{ app.patient?.firstname }}</div>
@@ -174,6 +174,26 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-container" v-if="totalPages > 1">
+                        <div class="pagination-info">
+                            Affichage de {{ paginationFrom }} à {{ paginationTo }} sur {{ filteredAppointments.length }} rendez-vous
+                        </div>
+                        <nav>
+                            <ul class="pagination">
+                                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                                    <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">&laquo;</button>
+                                </li>
+                                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: page === currentPage }">
+                                    <button class="page-link" @click="currentPage = page">{{ page }}</button>
+                                </li>
+                                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                                    <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">&raquo;</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -233,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
 import DatePickerComponent from '../../components/DatePickerComponent.vue';
@@ -252,6 +272,8 @@ const dateFilter = ref('');
 const statusFilter = ref('');
 const showModal = ref(false);
 const selectedApp = ref(null);
+const currentPage = ref(1);
+const perPage = 10;
 
 const assignForm = useForm({
     doctor_id: '',
@@ -280,22 +302,28 @@ const allAppointments = computed(() => {
 // ── Computed: filtered appointments after search, date and status ──
 const filteredAppointments = computed(() => {
     return allAppointments.value.filter(a => {
-        // Filtre par date
         if (dateFilter.value && !a.appointment_date?.startsWith(dateFilter.value)) return false;
-
-        // Filtre par statut
         if (statusFilter.value && a.status !== statusFilter.value) return false;
-
-        // Filtre par recherche (nom du patient)
         if (searchQuery.value) {
             const search = searchQuery.value.toLowerCase();
             const fullName = `${a.patient?.firstname ?? ''} ${a.patient?.lastname ?? ''}`.toLowerCase();
             if (!fullName.includes(search)) return false;
         }
-
         return true;
     });
 });
+
+// ── Pagination ──
+const totalPages = computed(() => Math.ceil(filteredAppointments.value.length / perPage));
+const paginationFrom = computed(() => Math.min((currentPage.value - 1) * perPage + 1, filteredAppointments.value.length));
+const paginationTo   = computed(() => Math.min(currentPage.value * perPage, filteredAppointments.value.length));
+const paginatedAppointments = computed(() => {
+    const start = (currentPage.value - 1) * perPage;
+    return filteredAppointments.value.slice(start, start + perPage);
+});
+
+// Reset page when filters change
+watch([filteredAppointments], () => { currentPage.value = 1; });
 
 // ── Has active filters ──
 const hasActiveFilters = computed(() =>
@@ -500,4 +528,38 @@ $border-radius: 0.75rem;
 }
 
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid $border-color;
+
+    .pagination-info { font-size: 0.875rem; color: #7e8299; }
+
+    .pagination {
+        margin: 0;
+        display: flex;
+        gap: 4px;
+
+        .page-item.active .page-link {
+            background: $primary-color;
+            border-color: $primary-color;
+            color: white;
+        }
+        .page-item.disabled .page-link { opacity: 0.5; cursor: not-allowed; }
+
+        .page-link {
+            border-radius: 6px;
+            border: 1px solid $border-color;
+            color: $primary-color;
+            background: white;
+            cursor: pointer;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.875rem;
+            &:hover { background: rgba($primary-color, 0.08); }
+        }
+    }
+}
 </style>
