@@ -45,7 +45,7 @@ class DashboardController extends Controller
                 'total_appointments' => Appointment::count(),
                 'pending_appointments' => Appointment::where('status', 'PENDING')->count(),
             ],
-            'recent_appointments' => Appointment::with(['patient', 'doctor', 'service'])
+            'recent_appointments' => Appointment::with(['patient', 'doctor', 'medicalService'])
                 ->latest()
                 ->take(5)
                 ->get(),
@@ -56,7 +56,7 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         return Inertia::render('backoffice/hospital/doctor_dashboard', [
-            'today_appointments' => Appointment::with(['patient', 'service'])
+            'today_appointments' => Appointment::with(['patient', 'medicalService'])
                 ->where('doctor_id', $user->id)
                 ->where('appointment_date', now()->toDateString())
                 ->orderBy('appointment_time')
@@ -74,11 +74,11 @@ class DashboardController extends Controller
     protected function receptionistDashboard()
     {
         return Inertia::render('backoffice/hospital/receptionist_dashboard', [
-            'pending_requests' => Appointment::with(['patient', 'service'])
+            'pending_requests' => Appointment::with(['patient', 'medicalService'])
                 ->where('status', 'PENDING')
                 ->latest()
                 ->get(),
-            'doctors_on_duty' => Doctor::with('user', 'service')->where('is_available', true)->get(),
+            'doctors_on_duty' => Doctor::with('user', 'medicalService')->where('is_available', true)->get(),
         ]);
     }
 

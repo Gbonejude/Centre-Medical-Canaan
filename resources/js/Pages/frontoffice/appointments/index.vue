@@ -1,72 +1,130 @@
 <template>
-    <DefaultLayout>
-        <div class="appointments-page py-5">
-            <div class="container">
-                <div class="header-section mb-5 text-center">
-                    <h2 class="fw-bold">Mes Rendez-vous</h2>
-                    <p class="text-muted">Consultez l'historique et le statut de vos demandes.</p>
-                    <Link :href="route('appointments.create')" class="btn btn-primary rounded-pill px-4 mt-3">
-                        <i class="fa fa-plus me-2"></i> Nouvelle Réservation
-                    </Link>
-                </div>
+    <div class="appointments-history py-5">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Mes Rendez-vous</h2>
+                <Link :href="route('front.appointments.create')" class="btn btn-primary rounded-pill px-4">
+                    <i class="fa fa-plus me-2"></i>Nouveau Rendez-vous
+                </Link>
+            </div>
 
-                <div class="row">
-                    <div v-for="app in my_appointments" :key="app.id" class="col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 border-0 shadow-sm rounded-4">
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="service-badge bg-light p-2 rounded-3 text-primary">
-                                        <i class="fa fa-stethoscope"></i> {{ app.service.name }}
-                                    </div>
-                                    <span :class="getStatusBadge(app.status)">{{ app.status }}</span>
-                                </div>
-                                <h5 class="card-title fw-bold mb-1">
-                                    {{ app.doctor ? 'Dr. ' + app.doctor.name : 'En attente de médecin' }}
-                                </h5>
-                                <p class="text-muted small mb-3">
-                                    <i class="fa fa-calendar me-2"></i> {{ app.appointment_date }}
-                                    <i class="fa fa-clock-o ms-3 me-2"></i> {{ app.appointment_time }}
-                                </p>
-                                <div v-if="app.receptionist_notes" class="alert alert-info py-2 small mb-0">
-                                    <strong>Note de l'accueil :</strong> {{ app.receptionist_notes }}
-                                </div>
+            <div v-if="appointments.length === 0" class="empty-state text-center py-5 bg-white rounded-4 shadow-sm">
+                <div class="mb-4">
+                    <i class="fa fa-calendar-times fa-4x text-muted opacity-25"></i>
+                </div>
+                <h4 class="text-muted">Vous n'avez pas encore de rendez-vous.</h4>
+                <p class="text-muted mb-4">Prenez votre premier rendez-vous avec l'un de nos spécialistes dès maintenant.</p>
+                <Link :href="route('front.appointments.create')" class="btn btn-outline-primary rounded-pill px-4">
+                    Commencer ici
+                </Link>
+            </div>
+
+            <div v-else class="row g-4">
+                <div v-for="appt in appointments" :key="appt.id" class="col-md-6 col-lg-4">
+                    <div class="appointment-card bg-white rounded-4 shadow-sm border-0 h-100 overflow-hidden transition-hover">
+                        <div :class="['status-bar', getStatusClass(appt.status)]"></div>
+                        <div class="p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span :class="['badge rounded-pill px-3 py-2', getBadgeClass(appt.status)]">
+                                    {{ translateStatus(appt.status) }}
+                                </span>
+                                <span class="text-muted small">
+                                    Ref: #{{ appt.id }}
+                                </span>
                             </div>
-                        </div>
-                    </div>
-                    <div v-if="my_appointments.length === 0" class="col-12 text-center py-5">
-                        <div class="empty-state">
-                            <i class="fa fa-calendar-times-o fa-4x text-muted opacity-25"></i>
-                            <h4 class="mt-3 text-muted">Aucun rendez-vous trouvé</h4>
+
+                            <h5 class="fw-bold mb-1">{{ appt.medical_service?.name }}</h5>
+                            <p class="text-muted mb-3 small" v-if="appt.doctor">
+                                <i class="fa fa-user-md me-1 text-primary"></i> Dr. {{ appt.doctor.user.lastname }}
+                            </p>
+
+                            <hr class="my-3 opacity-10">
+
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fa fa-calendar-alt me-2 text-primary"></i>
+                                <span>{{ formatDate(appt.appointment_date) }}</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-clock me-2 text-primary"></i>
+                                <span>{{ formatTime(appt.appointment_time) }}</span>
+                            </div>
+
+                            <div v-if="appt.reason" class="mt-3">
+                                <p class="text-muted small mb-0 line-clamp-2">
+                                    <strong>Motif :</strong> {{ appt.reason }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </DefaultLayout>
+    </div>
 </template>
 
 <script setup>
-import { Link } from "@inertiajs/vue3";
-import DefaultLayout from "../../components/layouts/DefaultLayout.vue";
+import { Link } from '@inertiajs/vue3'
 
-const props = defineProps({
-    my_appointments: Array,
-});
+defineProps({
+    appointments: Array
+})
 
-const getStatusBadge = (status) => {
-    let classes = 'badge rounded-pill ';
-    switch (status) {
-        case 'PENDING': return classes + 'bg-warning text-dark';
-        case 'CONFIRMED': return classes + 'bg-success';
-        case 'COMPLETED': return classes + 'bg-info';
-        case 'CANCELLED': return classes + 'bg-danger';
-        default: return classes + 'bg-secondary';
+const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    })
+}
+
+const formatTime = (time) => {
+    return time.substring(0, 5)
+}
+
+const translateStatus = (status) => {
+    const statuses = {
+        'PENDING': 'En attente',
+        'CONFIRMED': 'Confirmé',
+        'COMPLETED': 'Terminé',
+        'CANCELLED': 'Annulé',
+        'POSTPONED': 'Reporté'
     }
-};
+    return statuses[status] || status
+}
+
+const getBadgeClass = (status) => {
+    const classes = {
+        'PENDING': 'bg-warning-soft text-warning',
+        'CONFIRMED': 'bg-primary-soft text-primary',
+        'COMPLETED': 'bg-success-soft text-success',
+        'CANCELLED': 'bg-danger-soft text-danger',
+        'POSTPONED': 'bg-info-soft text-info'
+    }
+    return classes[status] || 'bg-secondary text-white'
+}
+
+const getStatusClass = (status) => {
+    const classes = {
+        'PENDING': 'bg-warning',
+        'CONFIRMED': 'bg-primary',
+        'COMPLETED': 'bg-success',
+        'CANCELLED': 'bg-danger',
+        'POSTPONED': 'bg-info'
+    }
+    return classes[status] || 'bg-secondary'
+}
 </script>
 
 <style scoped>
-.appointments-page { background-color: #f7f9fc; min-height: 90vh; }
-.card { transition: transform 0.2s; }
-.card:hover { transform: translateY(-5px); }
+.appointments-history { background-color: #f8f9fa; min-height: 80vh; }
+.appointment-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border-left: 1px solid rgba(0,0,0,0.05); }
+.appointment-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
+.status-bar { height: 4px; width: 100%; }
+.bg-warning-soft { background-color: #fff3cd; }
+.bg-primary-soft { background-color: #cfe2ff; }
+.bg-success-soft { background-color: #d1e7dd; }
+.bg-danger-soft { background-color: #f8d7da; }
+.bg-info-soft { background-color: #cff4fc; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 </style>

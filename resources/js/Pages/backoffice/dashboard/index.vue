@@ -127,11 +127,11 @@
                 <div class="quick-actions">
                     <h3>Actions Rapides</h3>
                     <div class="actions-grid">
-                        <button @click="$inertia.visit(route('appointments.create'))" class="action-btn">
-                            <i class="fas fa-plus-circle"></i> Nouveau Rendez-vous
+                        <button @click="$inertia.visit(route('medical-services.index'))" class="action-btn">
+                            <i class="fas fa-hospital-symbol"></i> Gérer les Services
                         </button>
-                        <button @click="$inertia.visit(route('users.create'))" class="action-btn">
-                            <i class="fas fa-user-plus"></i> Ajouter Utilisateur
+                        <button @click="$inertia.visit(route('schedules.index'))" class="action-btn">
+                            <i class="fas fa-calendar-alt"></i> Consulter le Planning
                         </button>
                     </div>
                 </div>

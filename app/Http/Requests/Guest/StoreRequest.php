@@ -26,8 +26,8 @@ final class StoreRequest extends FormRequest
         return [
             'lastname' => ['required', 'string', 'max:255'],
             'firstname' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:guests,email'],
-            'phone' => 'required|string|regex:/^([0-9\s\-\+\(\)]*)$/|min:8|unique:guests,phone',
+            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            'phone' => 'required|string|regex:/^([0-9\s\-\+\(\)]*)$/|min:8|unique:users,phone',
             'active' => 'nullable|boolean',
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];

@@ -19,15 +19,14 @@ const emit = defineEmits(['update:modelValue'])
 const datepicker = ref(null)
 
 const resolvedMaxDate = computed(() => {
-    if (props.maxDate === 'today') {
-        return 'today'
-    }
+    if (props.maxDate === 'today') return 'today'
+    if (props.maxDate === 'none' || props.maxDate === '') return null
     if (props.maxDate === 'tomorrow') {
         const tomorrow = new Date()
         tomorrow.setDate(tomorrow.getDate() + 1)
         return tomorrow
     }
-    return props.maxDate 
+    return props.maxDate
 })
 onMounted(() => {
     flatpickr(datepicker.value, {

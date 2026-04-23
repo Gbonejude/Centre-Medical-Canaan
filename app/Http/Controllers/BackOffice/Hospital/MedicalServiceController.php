@@ -21,15 +21,8 @@ class MedicalServiceController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $query = MedicalService::query();
-
-        if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
         return Inertia::render('backoffice/medical-services/index', [
-            'services' => $query->latest()->paginate(10)->withQueryString(),
-            'filters' => $request->only(['search']),
+            'services' => MedicalService::latest()->get(),
         ]);
     }
 

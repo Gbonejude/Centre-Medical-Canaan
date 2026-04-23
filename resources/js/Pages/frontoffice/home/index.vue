@@ -18,7 +18,7 @@
                     <h1>Votre santé est<br><span class="highlight">notre mission</span></h1>
                     <p>Prenez rendez-vous en ligne avec nos spécialistes en quelques clics seulement.</p>
                     <div class="hero-btns">
-                        <Link :href="route('appointments.create')" class="btn-appt">
+                        <Link :href="route('front.appointments.create')" class="btn-appt">
                             <i class="fa fa-calendar-plus"></i> Prendre Rendez-vous
                         </Link>
                         <a href="#services" class="btn-outline-white">
@@ -38,7 +38,7 @@
                             <label><i class="fa fa-hospital-o"></i> Service</label>
                             <select v-model="quick.service" class="quick-select">
                                 <option value="">Choisir un service...</option>
-                                <option v-for="s in allServices" :key="s.id" :value="s.name">
+                                <option v-for="s in allServices" :key="s.id" :value="s.id">
                                     {{ s.name }}
                                 </option>
                             </select>
@@ -47,8 +47,12 @@
                             <label><i class="fa fa-calendar"></i> Date</label>
                             <input type="date" v-model="quick.date" class="quick-input" :min="today" />
                         </div>
-                        <Link :href="route('appointments.create')" class="quick-btn">
-                            <i class="fa fa-search"></i> Voir les Créneaux Disponibles
+                        <div class="quick-field">
+                            <label><i class="fa fa-clock-o"></i> Heure</label>
+                            <input type="time" v-model="quick.time" class="quick-input" />
+                        </div>
+                        <Link :href="route('front.appointments.create', { service_id: quick.service, date: quick.date, time: quick.time })" class="quick-btn">
+                            <i class="fa fa-calendar-check"></i> Réserver maintenant
                         </Link>
                     </div>
                 </div>
@@ -74,7 +78,7 @@
                         <div class="service-body">
                             <h3>{{ item.name }}</h3>
                             <p>{{ item.description || 'Soins spécialisés assurés par notre équipe médicale certifiée.' }}</p>
-                            <Link :href="route('appointments.create')" class="service-link">
+                            <Link :href="route('front.appointments.create', { service_id: item.id })" class="service-link">
                                 Prendre rendez-vous <i class="fa fa-arrow-right"></i>
                             </Link>
                         </div>
@@ -140,7 +144,7 @@ export default {
     },
     data() {
         return {
-            quick: { service: '', date: '' },
+            quick: { service: '', date: '', time: '' },
             activeFaq: 0,
             faqs: [
                 {

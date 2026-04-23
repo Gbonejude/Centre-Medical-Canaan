@@ -18,8 +18,7 @@
                     </div>
                     <div class="header-actions">
                         <div class="search-container">
-                            <input type="text" v-model="searchQuery" placeholder="Rechercher un médecin..." class="form-control"
-                                @input="handleSearch" />
+                            <input type="text" v-model="searchQuery" placeholder="Rechercher un médecin..." class="form-control" />
                             <i class="fa fa-search search-icon"></i>
                         </div>
 
@@ -38,7 +37,7 @@
                     <div class="table-toolbar">
                         <div class="table-info">
                             <span class="result-count">
-                                <strong>{{ doctors.total }}</strong> médecins enregistrés
+                                <strong>{{ filteredDoctors.length }}</strong> médecin(s) trouvé(s)
                             </span>
                         </div>
                     </div>
@@ -70,8 +69,8 @@
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="doctors.data.length > 0">
-                                <tr v-for="doctor in doctors.data" :key="doctor.id" class="user-row">
+                            <tbody v-if="filteredDoctors.length > 0">
+                                <tr v-for="doctor in filteredDoctors" :key="doctor.id" class="user-row">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -90,19 +89,29 @@
                                     </td>
                                     <td>
                                         <div class="d-flex flex-wrap gap-1">
-                                            <span class="specialty-badge" v-for="spec in doctor.specialties" :key="spec.id">
-                                                {{ spec.name }}
-                                            </span>
-                                            <span v-if="!doctor.specialties || doctor.specialties.length === 0" class="text-muted">—</span>
+                                            <template v-if="doctor.specialties && doctor.specialties.length > 0">
+                                                <span class="specialty-badge" v-for="spec in doctor.specialties.slice(0, 2)" :key="spec.id">
+                                                    {{ spec.name }}
+                                                </span>
+                                                <span class="specialty-badge bg-secondary text-white" v-if="doctor.specialties.length > 2">
+                                                    +{{ doctor.specialties.length - 2 }}
+                                                </span>
+                                            </template>
+                                            <span v-else class="text-muted">—</span>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex flex-wrap gap-1">
-                                            <div class="service-badge" v-for="service in doctor.medical_services" :key="service.id">
-                                                <i class="fa fa-stethoscope me-1"></i>
-                                                {{ service.name }}
-                                            </div>
-                                            <span v-if="!doctor.medical_services || doctor.medical_services.length === 0" class="text-muted">—</span>
+                                            <template v-if="doctor.medical_services && doctor.medical_services.length > 0">
+                                                <div class="service-badge" v-for="service in doctor.medical_services.slice(0, 1)" :key="service.id">
+                                                    <i class="fa fa-stethoscope me-1"></i>
+                                                    {{ service.name }}
+                                                </div>
+                                                <div class="service-badge bg-secondary text-white" v-if="doctor.medical_services.length > 1">
+                                                    +{{ doctor.medical_services.length - 1 }}
+                                                </div>
+                                            </template>
+                                            <span v-else class="text-muted">—</span>
                                         </div>
                                     </td>
                                     <td class="text-center">
@@ -149,18 +158,8 @@
                     </div>
 
                     
-                    <div class="pagination-container" v-if="doctors.links && doctors.links.length > 3">
-                        <div class="pagination-info">
-                            Affichage de {{ doctors.from }} à {{ doctors.to }} sur {{ doctors.total }} médecins
-                        </div>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination">
-                                <li v-for="(link, index) in doctors.links" :key="index" class="page-item"
-                                    :class="{ 'active': link.active, 'disabled': !link.url }">
-                                    <Link class="page-link" :href="link.url || '#'" v-html="link.label" />
-                                </li>
-                            </ul>
-                        </nav>
+                    <div class="pagination-info p-3 text-muted small" v-if="searchQuery && filteredDoctors.length < props.doctors.length">
+                        {{ filteredDoctors.length }} résultat(s) sur {{ props.doctors.length }} médecins
                     </div>
                 </div>
             </div>
@@ -169,26 +168,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
-import debounce from 'lodash/debounce';
 
 const props = defineProps({
-    doctors: Object,
-    filters: Object,
+    doctors: Array,
 });
 
 const toast = useToast();
-const searchQuery = ref(props.filters.search || '');
+const searchQuery = ref('');
 
-const handleSearch = debounce(() => {
-    router.get(route('doctors.index'), { search: searchQuery.value }, {
-        preserveState: true,
-        replace: true
+const filteredDoctors = computed(() => {
+    if (!searchQuery.value) return props.doctors;
+    const q = searchQuery.value.toLowerCase();
+    return props.doctors.filter(d => {
+        const fullName = `${d.user?.firstname ?? ''} ${d.user?.lastname ?? ''}`.toLowerCase();
+        const specialty = d.specialties?.map(s => s.name).join(' ').toLowerCase() ?? '';
+        return fullName.includes(q) || specialty.includes(q);
     });
-}, 500);
+});
 
 function toggleAvailability(doctor) {
     router.patch(route('doctors.toggle-availability', doctor.id), {}, {

@@ -16,8 +16,7 @@
                     </div>
                     <div class="header-actions">
                         <div class="search-container">
-                            <input type="text" v-model="searchQuery" placeholder="Rechercher un service..." class="form-control"
-                                @input="handleSearch" />
+                            <input type="text" v-model="searchQuery" placeholder="Rechercher un service..." class="form-control" />
                             <i class="fa fa-search search-icon"></i>
                         </div>
                         <Link :href="route('medical-services.create')" class="btn btn-primary btn-add">
@@ -39,8 +38,8 @@
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="services.data.length > 0">
-                                <tr v-for="service in services.data" :key="service.id">
+                            <tbody v-if="filteredServices.length > 0">
+                                <tr v-for="service in filteredServices" :key="service.id">
                                     <td>
                                         <div class="service-info">
                                             <div class="service-icon">
@@ -94,23 +93,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
-import debounce from 'lodash/debounce';
 
 const props = defineProps({
-    services: Object,
-    filters: Object,
+    services: Array,
 });
 
 const toast = useToast();
-const searchQuery = ref(props.filters.search || '');
+const searchQuery = ref('');
 
-const handleSearch = debounce(() => {
-    router.get(route('medical-services.index'), { search: searchQuery.value }, { preserveState: true, replace: true });
-}, 500);
+const filteredServices = computed(() => {
+    if (!searchQuery.value) return props.services;
+    const q = searchQuery.value.toLowerCase();
+    return props.services.filter(s =>
+        s.name?.toLowerCase().includes(q) ||
+        s.description?.toLowerCase().includes(q)
+    );
+});
 
 function toggleStatus(service) {
     router.patch(route('medical-services.toggle-status', service.id), {}, {

@@ -34,7 +34,7 @@ class AdminController extends Controller
         $activeServices = MedicalService::where('is_active', true)->count();
 
         // ── Rendez-vous d'aujourd'hui ──
-        $todayAppointments = Appointment::with(['patient', 'doctor', 'service'])
+        $todayAppointments = Appointment::with(['patient', 'doctor', 'medicalService'])
             ->whereDate('appointment_date', today())
             ->orderBy('appointment_time')
             ->get()
@@ -46,7 +46,7 @@ class AdminController extends Controller
                 'doctor'           => $a->doctor
                     ? ('Dr. ' . $a->doctor->firstname . ' ' . $a->doctor->lastname)
                     : 'Non assigné',
-                'service'          => $a->service?->name ?? 'N/A',
+                'service'          => $a->medicalService?->name ?? 'N/A',
                 'appointment_time' => $a->appointment_time,
                 'status'           => $a->status,
             ]);

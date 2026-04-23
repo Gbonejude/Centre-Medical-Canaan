@@ -18,7 +18,7 @@ class AppointmentController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR'),
+            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR', except: ['create', 'store', 'mine']),
         ];
     }
     public function index(Request $request)
@@ -33,21 +33,6 @@ class AppointmentController extends Controller implements HasMiddleware
             $query->where('doctor_id', $user->id);
         }
 
-        // Filtrage par onglet (tab)
-        if ($request->tab === 'requests') {
-            $query->whereNull('doctor_id')->where('status', 'PENDING');
-        } elseif ($request->tab === 'scheduled') {
-            $query->whereNotNull('doctor_id')->whereIn('status', ['PENDING', 'CONFIRMED']);
-        } elseif ($request->tab === 'history') {
-            $query->whereIn('status', ['COMPLETED', 'CANCELLED']);
-        }
-
-        if ($request->search) {
-            $query->whereHas('patient', function($q) use ($request) {
-                $q->where('firstname', 'like', '%' . $request->search . '%')
-                  ->orWhere('lastname', 'like', '%' . $request->search . '%');
-            });
-        }
 
         // Statistiques adaptées au rôle
         $statsQuery = Appointment::query();
@@ -62,18 +47,20 @@ class AppointmentController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('backoffice/appointments/index', [
-            'appointments' => $query->latest()->paginate(10)->withQueryString(),
-            'filters' => $request->only(['tab', 'search']),
-            'stats' => $stats,
-            'isDoctor' => $isDoctor,
-            'availableDoctors' => Doctor::with(['user', 'specialty'])->get()
+            'appointments'     => $query->latest()->get(),
+            'stats'            => $stats,
+            'isDoctor'         => $isDoctor,
+            'availableDoctors' => Doctor::with(['user', 'specialty'])->get(),
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         return Inertia::render('frontoffice/appointments/create', [
-            'services' => MedicalService::where('is_active', true)->get(),
+            'services' => MedicalService::where('is_active', true)->orderBy('name')->get(),
+            'selectedServiceId' => $request->query('service_id'),
+            'selectedDate' => $request->query('date'),
+            'selectedTime' => $request->query('time'),
         ]);
     }
 
@@ -86,8 +73,8 @@ class AppointmentController extends Controller implements HasMiddleware
             'reason' => 'nullable|string',
         ]);
 
-        Appointment::create([
-            'patient_id' => auth()->id(),
+        $appointment = Appointment::create([
+            'patient_id' => auth()->id() ?? auth()->guard('guest')->id(),
             'medical_service_id' => $validated['medical_service_id'],
             'appointment_date' => $validated['appointment_date'],
             'appointment_time' => $validated['appointment_time'],
@@ -95,7 +82,25 @@ class AppointmentController extends Controller implements HasMiddleware
             'status' => 'PENDING',
         ]);
 
-        return redirect()->route('appointments.mine')->with('success', 'Votre demande de rendez-vous a été envoyée.');
+        // Dispatch Emails
+        dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'requested_patient'));
+        dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'new_request_staff'));
+
+        return redirect()->route('front.appointments.mine')->with('success', 'Votre demande de rendez-vous a été envoyée.');
+    }
+
+    public function mine()
+    {
+        $patientId = auth()->id() ?? auth()->guard('guest')->id();
+        
+        $appointments = Appointment::with(['medicalService', 'doctor.user'])
+            ->where('patient_id', $patientId)
+            ->latest()
+            ->get();
+
+        return Inertia::render('frontoffice/appointments/index', [
+            'appointments' => $appointments
+        ]);
     }
 
     public function assignDoctor(Request $request, $id)
@@ -115,6 +120,8 @@ class AppointmentController extends Controller implements HasMiddleware
             'status' => 'CONFIRMED',
             'confirmed_at' => now(),
         ]);
+
+        dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'status_changed'));
 
         return back()->with('success', "Le Dr. {$doctor->user->lastname} a été affecté au rendez-vous.");
     }
@@ -145,6 +152,8 @@ class AppointmentController extends Controller implements HasMiddleware
         }
 
         $appointment->update($updateData);
+
+        dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'status_changed'));
 
         return back()->with('success', 'Statut du rendez-vous mis à jour.');
     }

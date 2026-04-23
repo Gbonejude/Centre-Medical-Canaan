@@ -6,7 +6,7 @@
 
     <div class="content-wrapper">
         <div class="container">
-            
+
             <div class="page-header">
                 <div class="header-content">
                     <div class="header-title">
@@ -17,10 +17,41 @@
                         <p class="text-muted">Gérez les demandes et affectez des médecins</p>
                     </div>
                     <div class="header-actions">
-                        <div class="search-container">
-                            <input type="text" v-model="searchQuery" placeholder="Rechercher un patient..." class="form-control"
-                                @input="handleSearch" />
-                            <i class="fa fa-search search-icon"></i>
+                        <div class="filters-row">
+                            <!-- Filtre Date avec DatePickerComponent -->
+                            <div class="filter-item date-filter">
+                                <i class="fa fa-calendar filter-icon"></i>
+                                <DatePickerComponent
+                                    v-model="dateFilter"
+                                    maxDate="none"
+                                    placeholder="Filtrer par date..."
+                                />
+                                <button v-if="dateFilter" @click="dateFilter = ''" class="clear-btn" title="Effacer la date">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- Filtre Statut -->
+                            <div class="filter-item">
+                                <select v-model="statusFilter" class="form-select">
+                                    <option value="">Tous les statuts</option>
+                                    <option value="PENDING">En attente</option>
+                                    <option value="CONFIRMED">Confirmé</option>
+                                    <option value="COMPLETED">Terminé</option>
+                                    <option value="CANCELLED">Annulé</option>
+                                </select>
+                            </div>
+
+                            <!-- Recherche -->
+                            <div class="search-container">
+                                <input type="text" v-model="searchQuery" placeholder="Rechercher un patient..." class="form-control" />
+                                <i class="fa fa-search search-icon"></i>
+                            </div>
+
+                            <!-- Bouton réinitialiser -->
+                            <button v-if="hasActiveFilters" @click="resetFilters" class="btn-reset">
+                                <i class="fa fa-undo me-1"></i> Réinitialiser
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -29,24 +60,42 @@
             <!-- Systèmes d'onglets (Tabs) -->
             <div class="tabs-container mb-4">
                 <div class="premium-tabs">
-                    <button class="tab-item" :class="{ active: currentTab === 'requests' }" @click="switchTab('requests')">
+                    <button class="tab-item" :class="{ active: currentTab === 'all' }" @click="currentTab = 'all'">
+                        <i class="fa fa-list me-2"></i>
+                        Tous
+                        <span class="badge-count ms-2">{{ allAppointments.length }}</span>
+                    </button>
+                    <button class="tab-item" :class="{ active: currentTab === 'requests' }" @click="currentTab = 'requests'">
                         <i class="fa fa-inbox me-2"></i>
                         Nouvelles Demandes
                         <span class="badge ms-2" v-if="stats.requests > 0">{{ stats.requests }}</span>
                     </button>
-                    <button class="tab-item" :class="{ active: currentTab === 'scheduled' }" @click="switchTab('scheduled')">
+                    <button class="tab-item" :class="{ active: currentTab === 'scheduled' }" @click="currentTab = 'scheduled'">
                         <i class="fa fa-calendar-alt me-2"></i>
-                        Rendez-vous Planifiés
+                        Planifiés
                         <span class="badge badge-outline ms-2">{{ stats.scheduled }}</span>
                     </button>
-                    <button class="tab-item" :class="{ active: currentTab === 'history' }" @click="switchTab('history')">
+                    <button class="tab-item" :class="{ active: currentTab === 'today' }" @click="setToday">
+                        <i class="fa fa-sun me-2"></i>
+                        Aujourd'hui
+                        <span class="badge badge-today ms-2">{{ todayCount }}</span>
+                    </button>
+                    <button class="tab-item" :class="{ active: currentTab === 'history' }" @click="currentTab = 'history'">
                         <i class="fa fa-history me-2"></i>
                         Historique
                     </button>
                 </div>
             </div>
 
-            
+            <!-- Résumé du filtre actif -->
+            <div v-if="hasActiveFilters" class="filter-summary mb-3">
+                <i class="fa fa-filter me-2"></i>
+                <span>{{ filteredAppointments.length }} résultat(s) trouvé(s)</span>
+                <span v-if="dateFilter"> · Date : <strong>{{ dateFilter }}</strong></span>
+                <span v-if="statusFilter"> · Statut : <strong>{{ translateStatus(statusFilter) }}</strong></span>
+                <span v-if="searchQuery"> · Recherche : <strong>"{{ searchQuery }}"</strong></span>
+            </div>
+
             <div class="card data-card">
                 <div class="card-body">
                     <div class="table-responsive">
@@ -61,8 +110,8 @@
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="appointments.data.length > 0">
-                                <tr v-for="app in appointments.data" :key="app.id" class="user-row">
+                            <tbody v-if="filteredAppointments.length > 0">
+                                <tr v-for="app in filteredAppointments" :key="app.id" class="user-row">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-name">{{ app.patient?.lastname }} {{ app.patient?.firstname }}</div>
@@ -98,7 +147,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="action-buttons justify-content-center">
-                                            <button v-if="!app.doctor_id" @click="openAssignModal(app)" 
+                                            <button v-if="!app.doctor_id" @click="openAssignModal(app)"
                                                 class="btn btn-sm btn-primary-gradient" title="Affecter un médecin">
                                                 <i class="fa fa-user-plus me-1"></i> Affecter
                                             </button>
@@ -115,26 +164,15 @@
                                     <td :colspan="currentTab === 'requests' ? 5 : 6" class="text-center py-5">
                                         <div class="empty-state text-muted">
                                             <i class="fa fa-calendar-times fa-3x mb-3"></i>
-                                            <p>Aucun rendez-vous dans cet onglet.</p>
+                                            <p>Aucun rendez-vous trouvé pour ces critères.</p>
+                                            <button v-if="hasActiveFilters" @click="resetFilters" class="btn btn-sm btn-outline-secondary mt-2">
+                                                Effacer les filtres
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-
-                    <div class="pagination-container" v-if="appointments.links && appointments.links.length > 3">
-                        <div class="pagination-info">
-                            Affichage de {{ appointments.from }} à {{ appointments.to }} sur {{ appointments.total }} rendez-vous
-                        </div>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination">
-                                <li v-for="(link, index) in appointments.links" :key="index" class="page-item"
-                                    :class="{ 'active': link.active, 'disabled': !link.url }">
-                                    <Link class="page-link" :href="link.url || '#'" v-html="link.label" />
-                                </li>
-                            </ul>
-                        </nav>
                     </div>
                 </div>
             </div>
@@ -158,8 +196,8 @@
                 <div class="form-group">
                     <label class="form-label">Choisir le médecin idéal <span class="text-danger">*</span></label>
                     <div class="doctor-list">
-                        <div v-for="doctor in filteredDoctors" :key="doctor.id" 
-                            class="doctor-option" 
+                        <div v-for="doctor in filteredDoctors" :key="doctor.id"
+                            class="doctor-option"
                             :class="{ selected: assignForm.doctor_id === doctor.id }"
                             @click="assignForm.doctor_id = doctor.id">
                             <div class="doctor-avatar">
@@ -196,20 +234,22 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
-import debounce from 'lodash/debounce';
+import DatePickerComponent from '../../components/DatePickerComponent.vue';
 
 const props = defineProps({
-    appointments: Object,
-    filters: Object,
+    appointments: Array,
     stats: Object,
-    availableDoctors: Array
+    availableDoctors: Array,
+    isDoctor: Boolean,
 });
 
 const toast = useToast();
-const currentTab = ref(props.filters.tab || 'requests');
-const searchQuery = ref(props.filters.search || '');
+const currentTab = ref('all');
+const searchQuery = ref('');
+const dateFilter = ref('');
+const statusFilter = ref('');
 const showModal = ref(false);
 const selectedApp = ref(null);
 
@@ -218,25 +258,70 @@ const assignForm = useForm({
     notes: ''
 });
 
-const filteredDoctors = computed(() => {
-    if (!selectedApp.value) return [];
-    return props.availableDoctors.filter(d => d.medical_service_id === selectedApp.value.medical_service_id);
+// ── Computed: today's date string (YYYY-MM-DD) ──
+const todayStr = new Date().toISOString().split('T')[0];
+
+// ── Count of today's appointments ──
+const todayCount = computed(() =>
+    props.appointments.filter(a => a.appointment_date?.startsWith(todayStr)).length
+);
+
+// ── All appointments after tab filter ──
+const allAppointments = computed(() => {
+    return props.appointments.filter(a => {
+        if (currentTab.value === 'requests')  return !a.doctor_id && a.status === 'PENDING';
+        if (currentTab.value === 'scheduled') return a.doctor_id && ['PENDING', 'CONFIRMED'].includes(a.status);
+        if (currentTab.value === 'history')   return ['COMPLETED', 'CANCELLED'].includes(a.status);
+        if (currentTab.value === 'today')     return a.appointment_date?.startsWith(todayStr);
+        return true; // 'all'
+    });
 });
 
-function switchTab(tab) {
-    currentTab.value = tab;
-    router.get(route('appointments.index'), { tab, search: searchQuery.value }, {
-        preserveState: true,
-        replace: true
+// ── Computed: filtered appointments after search, date and status ──
+const filteredAppointments = computed(() => {
+    return allAppointments.value.filter(a => {
+        // Filtre par date
+        if (dateFilter.value && !a.appointment_date?.startsWith(dateFilter.value)) return false;
+
+        // Filtre par statut
+        if (statusFilter.value && a.status !== statusFilter.value) return false;
+
+        // Filtre par recherche (nom du patient)
+        if (searchQuery.value) {
+            const search = searchQuery.value.toLowerCase();
+            const fullName = `${a.patient?.firstname ?? ''} ${a.patient?.lastname ?? ''}`.toLowerCase();
+            if (!fullName.includes(search)) return false;
+        }
+
+        return true;
     });
+});
+
+// ── Has active filters ──
+const hasActiveFilters = computed(() =>
+    !!dateFilter.value || !!statusFilter.value || !!searchQuery.value
+);
+
+// ── Set today filter ──
+function setToday() {
+    currentTab.value = 'today';
+    dateFilter.value = '';
 }
 
-const handleSearch = debounce(() => {
-    router.get(route('appointments.index'), { tab: currentTab.value, search: searchQuery.value }, {
-        preserveState: true,
-        replace: true
-    });
-}, 500);
+// ── Reset all filters ──
+function resetFilters() {
+    searchQuery.value = '';
+    dateFilter.value = '';
+    statusFilter.value = '';
+}
+
+// ── Doctors filtered by service ──
+const filteredDoctors = computed(() => {
+    if (!selectedApp.value) return [];
+    return props.availableDoctors.filter(d =>
+        d.medical_service_id === selectedApp.value.medical_service_id
+    );
+});
 
 function openAssignModal(app) {
     selectedApp.value = app;
@@ -259,16 +344,17 @@ function submitAssignment() {
 }
 
 function formatDate(date) {
+    if (!date) return '—';
     return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatTime(time) {
-    return time ? time.substring(0, 5) : '';
+    return time ? time.substring(0, 5) : '—';
 }
 
 function translateStatus(status) {
     const statuses = {
-        'PENDING': 'En attente',
+        'PENDING':   'En attente',
         'CONFIRMED': 'Confirmé',
         'COMPLETED': 'Terminé',
         'CANCELLED': 'Annulé',
@@ -289,27 +375,86 @@ $body-color: #f9fafb;
 $border-radius: 0.75rem;
 
 .content-wrapper { background-color: $body-color; min-height: calc(100vh - 65px); padding: 2rem 0; }
-.page-header { margin-bottom: 2rem; .header-content { display: flex; justify-content: space-between; align-items: center; } .page-title { font-weight: 700; color: #181c32; } }
 
-.search-container { position: relative; width: 300px; .form-control { padding-left: 2.5rem; border-radius: 8px; } .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; } }
+.page-header {
+    margin-bottom: 2rem;
+    .header-content { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+    .page-title { font-weight: 700; color: #181c32; }
+}
+
+.filters-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    .filter-icon { color: #a1a5b7; font-size: 0.85rem; }
+
+    .form-select, :deep(.form-control) {
+        height: 38px;
+        border-radius: 8px;
+        border: 1px solid $border-color;
+        font-size: 0.875rem;
+        background: white;
+        &:focus { border-color: $primary-color; box-shadow: 0 0 0 3px rgba($primary-color, 0.1); }
+    }
+    .form-select { min-width: 160px; }
+}
+
+.date-filter {
+    position: relative;
+    :deep(.form-control) { padding-right: 2rem; min-width: 160px; }
+}
+
+.clear-btn {
+    background: none; border: none; color: #a1a5b7; cursor: pointer; padding: 0; margin-left: -1.5rem; z-index: 1;
+    &:hover { color: $danger-color; }
+}
+
+.search-container {
+    position: relative; width: 220px;
+    .form-control { padding-left: 2.5rem; border-radius: 8px; }
+    .search-icon { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; }
+}
+
+.btn-reset {
+    background: #fef2f2; border: 1px solid #fecaca; color: $danger-color;
+    padding: 0.4rem 0.85rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    &:hover { background: $danger-color; color: white; }
+}
+
+/* Filter summary */
+.filter-summary {
+    background: rgba($primary-color, 0.06); border: 1px solid rgba($primary-color, 0.15);
+    padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; color: #374151;
+}
 
 /* Tabs Design */
 .tabs-container {
     .premium-tabs {
-        display: flex; gap: 0.5rem; background: #eaecf0; padding: 0.4rem; border-radius: 12px; display: inline-flex;
+        display: flex; gap: 0.5rem; background: #eaecf0; padding: 0.4rem; border-radius: 12px; display: inline-flex; flex-wrap: wrap;
         .tab-item {
             padding: 0.6rem 1.25rem; border: none; background: transparent; border-radius: 10px; font-weight: 600; color: #667085; transition: all 0.2s;
             &.active { background: white; color: $primary-color; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-            .badge { background: $danger-color; color: white; font-size: 0.7rem; border-radius: 50px; }
-            .badge-outline { background: rgba($primary-color, 0.1); color: $primary-color; }
+            .badge { background: $danger-color; color: white; font-size: 0.7rem; border-radius: 50px; padding: 0.2rem 0.5rem; }
+            .badge-outline { background: rgba($primary-color, 0.1); color: $primary-color; font-size: 0.7rem; border-radius: 50px; padding: 0.2rem 0.5rem; }
+            .badge-count { background: #e5e7eb; color: #374151; font-size: 0.7rem; border-radius: 50px; padding: 0.2rem 0.5rem; }
+            .badge-today { background: rgba($success-color, 0.15); color: $success-color; font-size: 0.7rem; border-radius: 50px; padding: 0.2rem 0.5rem; }
         }
     }
 }
 
-.data-card { background-color: white; border-radius: $border-radius; box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05); border: none; .card-body { padding: 0; } }
+.data-card { background-color: white; border-radius: $border-radius; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.05); border: none; .card-body { padding: 0; } }
 
 .custom-table {
-    width: 100%; th { padding: 1.25rem 1.5rem; border-bottom: 1px solid $border-color; font-weight: 600; color: $secondary-color; background-color: #fcfcfd; }
+    width: 100%;
+    th { padding: 1.25rem 1.5rem; border-bottom: 1px solid $border-color; font-weight: 600; color: $secondary-color; background-color: #fcfcfd; }
     td { padding: 1.25rem 1.5rem; vertical-align: middle; border-bottom: 1px solid $border-color; }
 }
 
@@ -317,10 +462,10 @@ $border-radius: 0.75rem;
 
 .status-badge {
     padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-    &.pending { background-color: rgba($warning-color, 0.1); color: $warning-color; }
+    &.pending   { background-color: rgba($warning-color, 0.1); color: $warning-color; }
     &.confirmed { background-color: rgba($primary-color, 0.1); color: $primary-color; }
     &.completed { background-color: rgba($success-color, 0.1); color: $success-color; }
-    &.cancelled { background-color: rgba($danger-color, 0.1); color: $danger-color; }
+    &.cancelled { background-color: rgba($danger-color,  0.1); color: $danger-color;  }
 }
 
 .btn-primary-gradient {
@@ -328,7 +473,9 @@ $border-radius: 0.75rem;
     &:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba($primary-color, 0.3); }
 }
 
-/* Modal Styles */
+.empty-state { i { display: block; margin-bottom: 1rem; } }
+
+/* Modal */
 .modal-backdrop {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;
     .modal-content {

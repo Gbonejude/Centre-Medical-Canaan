@@ -43,7 +43,7 @@ return [
 
         'guest' => [
             'driver' => 'session',
-            'provider' => 'guests',
+            'provider' => 'users',
         ],
     ],
 

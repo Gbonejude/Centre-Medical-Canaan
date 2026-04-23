@@ -27,20 +27,8 @@ class DoctorController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $query = Doctor::with(['user', 'medicalServices', 'specialties']);
-
-        if ($request->search) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('firstname', 'like', '%' . $request->search . '%')
-                  ->orWhere('lastname', 'like', '%' . $request->search . '%');
-            })->orWhereHas('specialties', function($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%');
-            });
-        }
-
         return Inertia::render('backoffice/doctors/index', [
-            'doctors' => $query->latest()->paginate(10)->withQueryString(),
-            'filters' => $request->only(['search']),
+            'doctors' => Doctor::with(['user', 'medicalServices', 'specialties'])->latest()->get(),
         ]);
     }
 
@@ -57,7 +45,7 @@ class DoctorController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email:rfc,dns|unique:users,email',
             'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'exists:medical_services,id',
             'specialty_ids' => 'required|array|min:1',
@@ -124,7 +112,7 @@ class DoctorController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$doctor->user_id,
+            'email' => 'required|email:rfc,dns|unique:users,email,'.$doctor->user_id,
             'service_ids' => 'required|array|min:1',
             'service_ids.*' => 'exists:medical_services,id',
             'specialty_ids' => 'required|array|min:1',

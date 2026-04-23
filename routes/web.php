@@ -11,27 +11,52 @@ use App\Http\Controllers\BackOffice\Hospital\SpecialtyController;
 use App\Http\Controllers\BackOffice\Hospital\DoctorController;
 use App\Http\Controllers\BackOffice\Hospital\AppointmentController;
 use App\Http\Controllers\FrontOffice\PagesController;
+use App\Http\Controllers\FrontOffice\Auth\AuthGuestController;
 use Illuminate\Support\Facades\Route;
+
+// Extract domain from APP_URL
+$appUrl = config('app.url');
+$domain = parse_url($appUrl, PHP_URL_HOST) ?: $appUrl;
 
 /*
 |--------------------------------------------------------------------------
-| Front-Office Routes
+| Front-Office Routes (Patients / Guests)
 |--------------------------------------------------------------------------
 */
-Route::domain(config('app.url'))->group(function () {
+Route::domain($domain)->group(function () {
     Route::controller(PagesController::class)->name('home.')->group(function () {
         Route::get('/', 'index')->name('index');
+    });
+
+    // Patient/Guest Auth
+    Route::controller(AuthGuestController::class)->name('auth.guest.')->group(function () {
+        Route::get('/login', 'showLoginForm')->name('login.form');
+        Route::post('/login', 'login')->name('login');
+        Route::get('/register', 'showRegisterForm')->name('register.form');
+        Route::post('/register', 'register')->name('register');
+        Route::post('/logout', 'logout')->name('logout')->middleware('auth:guest');
+    });
+
+    // Front-Office Appointments
+    Route::middleware('guest.auth')->group(function () {
+        Route::get('/appointments/booking', [AppointmentController::class, 'create'])->name('front.appointments.create');
+        Route::post('/appointments/booking', [AppointmentController::class, 'store'])->name('front.appointments.store');
+        Route::get('/my-appointments', [AppointmentController::class, 'mine'])->name('front.appointments.mine');
+
+        // Patient Profile
+        Route::get('/profile', [\App\Http\Controllers\FrontOffice\PatientProfileController::class, 'index'])->name('front.profile.index');
+        Route::put('/profile', [\App\Http\Controllers\FrontOffice\PatientProfileController::class, 'update'])->name('front.profile.update');
     });
 });
 
 /*
 |--------------------------------------------------------------------------
-| Back-Office Routes
+| Back-Office Routes (Administration)
 |--------------------------------------------------------------------------
 */
-Route::group(['domain' => 'admin.'.config('app.url')], function () {
+Route::group(['domain' => 'admin.'.$domain], function () {
 
-    // Authentification
+    // Authentification Admin
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('auth.loginForm');
     Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 
@@ -42,7 +67,7 @@ Route::group(['domain' => 'admin.'.config('app.url')], function () {
         Route::post('/reset-password', 'resetPassword')->name('auth.password.reset');
     });
 
-    // Routes protégées par authentification
+    // Routes protégées par authentification Admin
     Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/', [AdminController::class, 'index'])->name('dashboard.index');
@@ -74,32 +99,25 @@ Route::group(['domain' => 'admin.'.config('app.url')], function () {
 
         /*
         |--------------------------------------------------------------------------
-        | MODULE HÔPITAL (ESGIS GROUPE 6)
+        | MODULE HÔPITAL
         |--------------------------------------------------------------------------
         */
-
-        // Gestion des Services Médicaux
         Route::resource('medical-services', MedicalServiceController::class);
         Route::patch('medical-services/{medicalService}/toggle-status', [MedicalServiceController::class, 'toggleStatus'])->name('medical-services.toggle-status');
 
-        // Gestion des Spécialités
         Route::resource('specialties', SpecialtyController::class);
         Route::patch('specialties/{specialty}/toggle-status', [SpecialtyController::class, 'toggleStatus'])->name('specialties.toggle-status');
 
-        // Gestion des Médecins
         Route::resource('doctors', DoctorController::class);
         Route::patch('doctors/{doctor}/toggle-availability', [DoctorController::class, 'toggleAvailability'])->name('doctors.toggle-availability');
 
-        // Gestion des Patients
         Route::resource('patients', \App\Http\Controllers\BackOffice\Hospital\PatientController::class);
 
-        // Gestion des Rendez-vous
         Route::resource('appointments', AppointmentController::class);
         Route::post('appointments/{appointment}/assign', [AppointmentController::class, 'assignDoctor'])->name('appointments.assign');
         Route::post('appointments/{appointment}/confirm', [AppointmentController::class, 'confirm'])->name('appointments.confirm');
         Route::put('appointments/{appointment}/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
 
-        // Planning des Médecins (Disponibilités)
         Route::get('planning', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
         Route::get('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
         Route::put('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');

@@ -14,8 +14,8 @@
                 <div class="login-icon">
                   <i class="fas fa-sign-in-alt"></i>
                 </div>
-                <h2 class="login-title">Sign In</h2>
-                <p class="login-subtitle">Enter your credentials to continue</p>
+                 <h2 class="login-title">Connexion</h2>
+                 <p class="login-subtitle">Entrez vos identifiants pour continuer</p>
               </div>
 
               
@@ -28,7 +28,7 @@
                 
                 <div class="form-group">
                   <label for="email" class="form-label">
-                    <i class="fas fa-envelope me-2"></i>Email Address
+                     <i class="fas fa-envelope me-2"></i>Adresse Email
                   </label>
                   <input
                     id="email"
@@ -36,7 +36,7 @@
                     type="email"
                     class="form-control"
                     :class="{ 'is-invalid': errors.email }"
-                    placeholder="Enter your email address"
+                     placeholder="Entrez votre adresse email"
                   />
                     <div v-if="errors.email"><span class="text-danger">{{ errors.email[0] }}</span>
                             </div>
@@ -45,7 +45,7 @@
                 
                 <div class="form-group">
                   <label for="password" class="form-label">
-                    <i class="fas fa-lock me-2"></i>Password
+                     <i class="fas fa-lock me-2"></i>Mot de passe
                   </label>
                   <div class="password-input-group">
                     <input
@@ -54,7 +54,7 @@
                       :type="showPassword ? 'text' : 'password'"
                       class="form-control"
                       :class="{ 'is-invalid': errors.password }"
-                      placeholder="Enter your password"
+                       placeholder="Entrez votre mot de passe"
                     />
                     <button
                       type="button"
@@ -81,7 +81,7 @@
                   >
                   <span v-if="form.processing" class="spinner-border spinner-border-sm me-2"></span>
                   <i v-else class="fas fa-sign-in-alt me-2"></i>
-                  {{ form.processing ? 'Signing In...' : 'Sign In' }}
+                   {{ form.processing ? 'Connexion en cours...' : 'Se connecter' }}
     
                   </button>
                 </div>
@@ -90,10 +90,10 @@
               
               <div class="login-card-footer">
                 <p class="register-link">
-                  Don't have an account?
-                  <Link :href="route('auth.guest.register.form')" class="link-primary">
-                    <i class="fas fa-user-plus me-1"></i>Create account
-                  </Link>
+                   Vous n'avez pas de compte ?
+                   <Link :href="route('auth.guest.register.form')" class="link-primary">
+                     <i class="fas fa-user-plus me-1"></i>Créer un compte
+                   </Link>
                 </p>
               </div>
             </div>

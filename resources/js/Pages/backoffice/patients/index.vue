@@ -18,8 +18,7 @@
                     </div>
                     <div class="header-actions">
                         <div class="search-container">
-                            <input type="text" v-model="searchQuery" placeholder="Rechercher un patient..." class="form-control"
-                                @input="handleSearch" />
+                            <input type="text" v-model="searchQuery" placeholder="Rechercher un patient..." class="form-control" />
                             <i class="fa fa-search search-icon"></i>
                         </div>
                     </div>
@@ -32,7 +31,7 @@
                     <div class="table-toolbar">
                         <div class="table-info">
                             <span class="result-count">
-                                <strong>{{ patients.total }}</strong> patients enregistrés
+                                <strong>{{ filteredPatients.length }}</strong> patient(s) trouvé(s)
                             </span>
                         </div>
                     </div>
@@ -59,8 +58,8 @@
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="patients.data.length > 0">
-                                <tr v-for="patient in patients.data" :key="patient.id" class="user-row">
+                            <tbody v-if="filteredPatients.length > 0">
+                                <tr v-for="patient in filteredPatients" :key="patient.id" class="user-row">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -116,18 +115,8 @@
                     </div>
 
                     
-                    <div class="pagination-container" v-if="patients.links && patients.links.length > 3">
-                        <div class="pagination-info">
-                            Affichage de {{ patients.from }} à {{ patients.to }} sur {{ patients.total }} patients
-                        </div>
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination">
-                                <li v-for="(link, index) in patients.links" :key="index" class="page-item"
-                                    :class="{ 'active': link.active, 'disabled': !link.url }">
-                                    <Link class="page-link" :href="link.url || '#'" v-html="link.label" />
-                                </li>
-                            </ul>
-                        </nav>
+                    <div class="pagination-info p-3 text-muted small" v-if="searchQuery && filteredPatients.length < props.patients.length">
+                        {{ filteredPatients.length }} résultat(s) sur {{ props.patients.length }} patients
                     </div>
                 </div>
             </div>
@@ -136,26 +125,28 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
-import debounce from 'lodash/debounce';
 
 const props = defineProps({
-    patients: Object,
-    filters: Object,
+    patients: Array,
 });
 
 const toast = useToast();
-const searchQuery = ref(props.filters.search || '');
+const searchQuery = ref('');
 
-const handleSearch = debounce(() => {
-    router.get(route('patients.index'), { search: searchQuery.value }, {
-        preserveState: true,
-        replace: true
+const filteredPatients = computed(() => {
+    if (!searchQuery.value) return props.patients;
+    const q = searchQuery.value.toLowerCase();
+    return props.patients.filter(p => {
+        const fullName = `${p.user?.firstname ?? ''} ${p.user?.lastname ?? ''}`.toLowerCase();
+        const email = (p.user?.email ?? '').toLowerCase();
+        const phone = (p.user?.phone ?? '').toLowerCase();
+        return fullName.includes(q) || email.includes(q) || phone.includes(q);
     });
-}, 500);
+});
 
 function formatDate(date) {
     if (!date) return '—';

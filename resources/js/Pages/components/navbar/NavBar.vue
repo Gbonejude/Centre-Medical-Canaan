@@ -22,11 +22,45 @@
                     </Link>
 
                     
-                    <div class="auth-section d-none d-lg-block">
-                        <Link :href="route('auth.loginForm')" class="btn btn-primary ms-4 px-5 py-2">
-                            <i class="fas fa-sign-in-alt me-2"></i>
-                            Se Connecter
-                        </Link>
+                    <div class="auth-section d-none d-lg-flex align-items-center">
+                        <template v-if="$page.props.auth.guest">
+                            <div v-if="$page.props.auth.guest" class="dropdown">
+                                <button class="btn-profile dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <div class="avatar-sm bg-primary text-white me-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {{ $page.props.auth.guest.firstname }}
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                    <li>
+                                        <Link :href="route('front.appointments.mine')" class="dropdown-item">
+                                            <i class="fas fa-calendar-alt me-2"></i> Mes Rendez-vous
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link :href="route('front.profile.index')" class="dropdown-item">
+                                            <i class="fas fa-user-circle me-2"></i> Mon Profil
+                                        </Link>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <Link :href="route('auth.guest.logout')" method="post" as="button" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Déconnexion
+                                        </Link>
+                                    </li>
+                                </ul>
+                            </div>
+                        </template>
+                        <template v-else-if="$page.props.auth.user">
+                             <a :href="route('dashboard.index')" class="btn btn-outline-primary rounded-pill px-4">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                            </a>
+                        </template>
+                        <template v-else>
+                            <Link :href="route('auth.guest.login.form')" class="btn btn-primary px-5 py-2 rounded-pill">
+                                Se Connecter
+                            </Link>
+                        </template>
                     </div>
                 </div>
 
@@ -53,11 +87,27 @@
                 </div>
 
                 
-                <div class="mobile-auth-section">
-                    <Link :href="route('auth.loginForm')" class="mobile-login-dropdown" @click="closeMobileMenu">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Se Connecter
-                    </Link>
+                <div class="mobile-auth-section px-3">
+                    <template v-if="$page.props.auth.guest">
+                        <div class="d-flex flex-column gap-2">
+                            <span class="text-center fw-bold mb-2">Bonjour, {{ $page.props.auth.guest.firstname }}</span>
+                            <Link :href="route('auth.guest.logout')" method="post" as="button" class="btn btn-danger w-100 rounded-pill" @click="closeMobileMenu">
+                                <i class="fas fa-sign-out-alt me-2"></i> Déconnexion
+                            </Link>
+                        </div>
+                    </template>
+                    <template v-else-if="$page.props.auth.user">
+                        <a :href="route('dashboard.index')" class="btn btn-outline-primary w-100 rounded-pill" @click="closeMobileMenu">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin
+                        </a>
+                    </template>
+                    <template v-else>
+                        <div class="d-flex flex-column gap-2">
+                            <Link :href="route('auth.guest.login.form')" class="btn btn-primary w-100 rounded-pill" @click="closeMobileMenu">
+                                Se Connecter
+                            </Link>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>

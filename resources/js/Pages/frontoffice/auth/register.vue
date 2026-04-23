@@ -15,8 +15,8 @@
                 <div class="register-icon">
                   <i class="fas fa-user-plus"></i>
                 </div>
-                <h2 class="register-title">Create Account</h2>
-                <p class="register-subtitle">Fill in your details to get started</p>
+                 <h2 class="register-title">Créer un compte</h2>
+                 <p class="register-subtitle">Remplissez vos informations pour commencer</p>
               </div>
 
               <form @submit.prevent="submit" class="register-form">
@@ -25,10 +25,10 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="firstname" class="form-label">
-                        <i class="fas fa-user me-2"></i>First Name
-                      </label>
-                      <input id="firstname" v-model="form.firstname" type="text" class="form-control"
-                        :class="{ 'is-invalid': form.errors.firstname }" placeholder="Enter your first name" />
+                         <i class="fas fa-user me-2"></i>Prénom
+                       </label>
+                       <input id="firstname" v-model="form.firstname" type="text" class="form-control"
+                         :class="{ 'is-invalid': form.errors.firstname }" placeholder="Entrez votre prénom" />
                      <div v-if="errors.firstname" class="invalid-feedback">
                                 {{ errors.firstname[0] }}
                             </div>
@@ -38,10 +38,10 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="lastname" class="form-label">
-                        <i class="fas fa-user me-2"></i>Last Name
-                      </label>
-                      <input id="lastname" v-model="form.lastname" type="text" class="form-control"
-                        :class="{ 'is-invalid': form.errors.lastname }" placeholder="Enter your last name" />
+                         <i class="fas fa-user me-2"></i>Nom
+                       </label>
+                       <input id="lastname" v-model="form.lastname" type="text" class="form-control"
+                         :class="{ 'is-invalid': form.errors.lastname }" placeholder="Entrez votre nom" />
                       <div v-if="errors.lastname" class="invalid-feedback">
                                 {{ errors.lastname[0] }}
                             </div>
@@ -52,10 +52,10 @@
                 
                 <div class="form-group">
                   <label for="email" class="form-label">
-                    <i class="fas fa-envelope me-2"></i>Email Address
-                  </label>
-                  <input id="email" v-model="form.email" type="email" class="form-control"
-                    :class="{ 'is-invalid': form.errors.email }" placeholder="Enter your email address" />
+                     <i class="fas fa-envelope me-2"></i>Adresse Email
+                   </label>
+                   <input id="email" v-model="form.email" type="email" class="form-control"
+                     :class="{ 'is-invalid': form.errors.email }" placeholder="Entrez votre adresse email" />
                    <div v-if="errors.email" class="invalid-feedback">
                                 {{ errors.email[0] }}
                             </div>
@@ -64,14 +64,14 @@
                 
                 <div class="form-group">
                   <label for="phone" class="form-label">
-                    <i class="fas fa-phone me-2"></i>Phone Number
-                  </label>
-                  <VueTelInput
-                    v-model="form.phone"
-                    mode="international"
-                    :dropdownOptions="{ showDialCodeInSelection: true, showFlags: true }"
-                    :inputOptions="{ placeholder: 'Enter your phone number', class: 'form-control', id: 'phone' }"
-                    defaultCountry="US"
+                     <i class="fas fa-phone me-2"></i>Numéro de téléphone
+                   </label>
+                   <VueTelInput
+                     v-model="form.phone"
+                     mode="international"
+                     :dropdownOptions="{ showDialCodeInSelection: true, showFlags: true }"
+                     :inputOptions="{ placeholder: 'Entrez votre numéro de téléphone', class: 'form-control', id: 'phone' }"
+                     defaultCountry="TG"
                     @validate="(state) => isPhoneValid = state.valid"
                     style-classes="phone-input"
                   />
@@ -85,10 +85,10 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="password" class="form-label">
-                        <i class="fas fa-lock me-2"></i>Password
-                      </label>
-                      <input id="password" v-model="form.password" type="password" class="form-control"
-                        :class="{ 'is-invalid': form.errors.password }" placeholder="Enter your password" />
+                         <i class="fas fa-lock me-2"></i>Mot de passe
+                       </label>
+                       <input id="password" v-model="form.password" type="password" class="form-control"
+                         :class="{ 'is-invalid': form.errors.password }" placeholder="Entrez votre mot de passe" />
                       <div v-if="errors.password" class="invalid-feedback">
                                 {{ errors.password[0] }}
                             </div>
@@ -98,11 +98,11 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label for="password_confirmation" class="form-label">
-                        <i class="fas fa-check-circle me-2"></i>Confirm Password
-                      </label>
-                      <input id="password_confirmation" v-model="form.password_confirmation" type="password"
-                        class="form-control" :class="{ 'is-invalid': form.errors.password_confirmation }"
-                        placeholder="Confirm your password" />
+                         <i class="fas fa-check-circle me-2"></i>Confirmer le mot de passe
+                       </label>
+                       <input id="password_confirmation" v-model="form.password_confirmation" type="password"
+                         class="form-control" :class="{ 'is-invalid': form.errors.password_confirmation }"
+                         placeholder="Confirmez votre mot de passe" />
 
                        <div v-if="errors.password_confirmation" class="invalid-feedback">
                                 {{ errors.password_confirmation[0] }}
@@ -115,8 +115,8 @@
                 <div class="form-actions">
                   <button type="submit" :disabled="form.processing" class="btn btn-primary btn-register">
                     <span v-if="form.processing" class="spinner-border spinner-border-sm me-2"></span>
-                    <i v-else class="fas fa-user-plus me-2"></i>
-                    {{ form.processing ? 'Creating Account...' : 'Create Account' }}
+                     <i v-else class="fas fa-user-plus me-2"></i>
+                     {{ form.processing ? 'Création du compte...' : 'Créer un compte' }}
                   </button>
                 </div>
               </form>
@@ -124,10 +124,10 @@
               
               <div class="register-card-footer">
                 <p class="login-link">
-                  Already have an account?
-                  <Link :href="route('auth.guest.login.form')" class="link-primary">
-                  <i class="fas fa-sign-in-alt me-1"></i>Sign in here
-                  </Link>
+                   Vous avez déjà un compte ?
+                   <Link :href="route('auth.guest.login.form')" class="link-primary">
+                   <i class="fas fa-sign-in-alt me-1"></i>Connectez-vous ici
+                   </Link>
                 </p>
               </div>
             </div>
@@ -164,7 +164,7 @@ const form = useForm({
 
 const submit = () => {
   if (!isPhoneValid.value) {
-    toast.error("Please enter a valid phone number");
+    toast.error("Veuillez entrer un numéro de téléphone valide");
     return;
   }
   form.post(route('auth.guest.register'), {
@@ -172,7 +172,7 @@ const submit = () => {
       form.reset('password', 'password_confirmation')
     },
     onSuccess: () => {
-      toast.success('Your account has been created successfully. You can now log in.', {
+      toast.success('Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.', {
         position: "top-right",
         timeout: 5000,
         closeOnClick: true,
@@ -192,7 +192,7 @@ const submit = () => {
           pauseOnHover: true,
         });
       } else {
-        toast.error('An error occurred while creating your account. Please try again.', {
+        toast.error('Une erreur est survenue lors de la création de votre compte. Veuillez réessayer.', {
           position: 'top-right',
           timeout: 5000,
           closeOnClick: true,

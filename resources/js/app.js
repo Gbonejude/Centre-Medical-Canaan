@@ -55,7 +55,6 @@ createInertiaApp({
         const vueApp = createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(Toast)
-            .use(Ziggy)
             .mixin({ methods: { route } })
             .component('Link', Link)
             .component('Head', Head)
