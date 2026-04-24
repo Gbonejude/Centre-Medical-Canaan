@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewUserMail;
 use Spatie\Permission\Models\Role;
 
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -55,14 +57,16 @@ class DoctorController extends Controller implements HasMiddleware
             'gender' => 'nullable|string',
         ]);
 
-        DB::transaction(function() use ($validated) {
+        $passwordGenerate = $this->generatePassword();
+
+        DB::transaction(function() use ($validated, $passwordGenerate) {
             $user = User::create([
                 'firstname' => $validated['firstname'],
                 'lastname' => $validated['lastname'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'gender' => $validated['gender'] ?? null,
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($passwordGenerate),
                 'email_verified_at' => now(),
             ]);
 
@@ -79,6 +83,8 @@ class DoctorController extends Controller implements HasMiddleware
 
             $doctor->medicalServices()->sync($validated['service_ids']);
             $doctor->specialties()->sync($validated['specialty_ids']);
+
+            Mail::to($user->email)->send(new NewUserMail($user->email, $passwordGenerate));
         });
 
         return redirect()->route('doctors.index')->with('success', 'Médecin ajouté avec succès.');
@@ -175,5 +181,10 @@ class DoctorController extends Controller implements HasMiddleware
 
         $status = $doctor->is_available ? 'disponible' : 'indisponible';
         return back()->with('success', "Le Dr. {$doctor->user->lastname} est désormais {$status}.");
+    }
+
+    protected function generatePassword(): string
+    {
+        return substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'), 0, 10);
     }
 }

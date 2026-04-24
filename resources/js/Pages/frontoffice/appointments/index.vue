@@ -35,7 +35,7 @@
 
                             <h5 class="fw-bold mb-1">{{ appt.medical_service?.name }}</h5>
                             <p class="text-muted mb-3 small" v-if="appt.doctor">
-                                <i class="fa fa-user-md me-1 text-primary"></i> Dr. {{ appt.doctor.user.lastname }}
+                                <i class="fa fa-user-md me-1 text-primary"></i> Dr. {{ appt.doctor.lastname }}
                             </p>
 
                             <hr class="my-3 opacity-10">

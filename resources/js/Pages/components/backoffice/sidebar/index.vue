@@ -86,19 +86,19 @@
                         </Link>
                     </li>
 
-                    <!-- Mon Planning (Médecin) -->
+                    <!-- Mon Planning (Médecin Uniquement) -->
                     <li
-                        v-if="userHasPermission([PERMISSIONS.DOCTOR])"
-                        :class="{ active: isActiveLink('/appointments') }"
+                        v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
+                        :class="{ active: isActiveLink('/planning') }"
                     >
-                        <Link :href="route('appointments.index')" @click="closeSidebarOnMobile">
+                        <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
                             <i class="fa fa-calendar-alt"></i><span>Mon Planning</span>
                         </Link>
                     </li>
 
-                    <!-- Mes Rendez-vous (Médecin) - Optionnel si distinct ou même lien -->
+                    <!-- Mes Rendez-vous (Médecin Uniquement) -->
                     <li
-                        v-if="userHasPermission([PERMISSIONS.DOCTOR])"
+                        v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
                         :class="{ active: isActiveLink('/appointments') }"
                     >
                         <Link :href="route('appointments.index')" @click="closeSidebarOnMobile">

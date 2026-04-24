@@ -4,7 +4,7 @@
     </Head>
     <section class="login-section">
         <div class="login-box">
-            <h1>CANAAN CARE SERVICES</h1>
+            <h1>Centre Médical Canaan</h1>
             <h5 class="mb-3 text-center text-muted">Create New Password</h5>
             <p class="text-center text-muted mb-4">
                 Please enter your new password below.

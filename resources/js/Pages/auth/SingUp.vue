@@ -2,7 +2,7 @@
     <section class="login-section">
 
         <div class="login-box">
-            <h1>CANAAN CARE SERVICES</h1>
+            <h1>Centre Médical Canaan</h1>
             <form>
                 <div class="mb-3">
                     <input type="email" class="form-control" id="email" placeholder="E-mail">

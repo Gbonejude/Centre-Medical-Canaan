@@ -4,7 +4,7 @@
     </Head>
     <section class="login-section">
         <div class="login-box">
-            <h1>CANAAN CARE SERVICES</h1>
+            <h1>Centre Médical Canaan</h1>
             <div v-if="errors.message" class="mt-2 mb-2 error-message-container">
                 <p class="text-center text-danger">{{ errors.message[0] }}</p>
             </div>

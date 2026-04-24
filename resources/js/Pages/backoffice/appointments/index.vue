@@ -343,12 +343,36 @@ function resetFilters() {
     statusFilter.value = '';
 }
 
-// ── Doctors filtered by service ──
+// ── Doctors filtered by service and availability ──
 const filteredDoctors = computed(() => {
     if (!selectedApp.value) return [];
-    return props.availableDoctors.filter(d =>
-        d.medical_service_id === selectedApp.value.medical_service_id
-    );
+    
+    const appDate = selectedApp.value.appointment_date;
+    const appTime = selectedApp.value.appointment_time.substring(0, 5); // HH:MM
+    
+    // Day of week
+    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dateObj = new Date(appDate);
+    const dayKey = daysMap[dateObj.getDay()];
+
+    return props.availableDoctors.filter(d => {
+        // Filter by service
+        const hasService = d.medical_service_id === selectedApp.value.medical_service_id;
+        if (!hasService) return false;
+
+        // Filter by availability (Planning)
+        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
+            return false;
+        }
+
+        const slots = d.availability[dayKey].slots;
+        if (!slots || slots.length === 0) return false;
+
+        // Check if appointment time falls within any of the doctor's slots
+        return slots.some(slot => {
+            return appTime >= slot.start && appTime <= slot.end;
+        });
+    });
 });
 
 function openAssignModal(app) {

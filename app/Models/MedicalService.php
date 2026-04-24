@@ -17,6 +17,10 @@ class MedicalService extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function doctors()
     {
         return $this->hasMany(Doctor::class);

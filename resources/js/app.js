@@ -71,5 +71,5 @@ createInertiaApp({
         return vueApp
     },
 
-    title: title => `Canaan Care Services - ${title}`,
+    title: title => `Centre Médical Canaan - ${title}`,
 })

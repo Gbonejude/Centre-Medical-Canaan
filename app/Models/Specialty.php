@@ -12,6 +12,10 @@ class Specialty extends Model
 
     protected $fillable = ['name', 'slug', 'description', 'is_active'];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     protected static function boot()
     {
         parent::boot();

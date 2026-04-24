@@ -26,7 +26,7 @@ class SendAppointmentEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $appointment = \App\Models\Appointment::with(['patient', 'medicalService', 'doctor.user'])->find($this->appointment->id);
+        $appointment = \App\Models\Appointment::with(['patient', 'medicalService', 'doctor'])->find($this->appointment->id);
         
         if (!$appointment) return;
 
@@ -42,14 +42,20 @@ class SendAppointmentEmailJob implements ShouldQueue
                 break;
 
             case 'new_request_staff':
-                $receptionists = \App\Models\User::role('RECEPTIONIST')->get();
-                if ($receptionists->isEmpty()) {
-                    $receptionists = \App\Models\User::role('ADMIN')->get();
-                }
+                $receptionists = \App\Models\User::role(['RECEPTIONIST', 'ADMIN', 'SUPER ADMIN'])->get();
 
                 foreach ($receptionists as $staff) {
                     \Illuminate\Support\Facades\Mail::to($staff->email)
                         ->send(new \App\Mail\NewAppointmentRequestStaff($appointment));
+                    
+                    $staff->notify(new \App\Notifications\NewAppointmentRequestNotification($appointment));
+                }
+                break;
+
+            case 'assigned_doctor':
+                if ($appointment->doctor) {
+                    $appointment->doctor->notify(new \App\Notifications\AppointmentAssignedNotification($appointment));
+                    // On pourrait aussi envoyer un mail spécifique au docteur ici si besoin
                 }
                 break;
         }

@@ -123,7 +123,7 @@ const props = defineProps({
 const form = useForm({
     name: props.service.name,
     description: props.service.description || '',
-    is_active: props.service.is_active,
+    is_active: Boolean(props.service.is_active),
 });
 
 function update() {

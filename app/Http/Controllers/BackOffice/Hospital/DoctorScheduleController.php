@@ -15,11 +15,19 @@ class DoctorScheduleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST'),
+            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR'),
         ];
     }
     public function index(Request $request)
     {
+        $user = auth()->user();
+        if ($user->hasRole('DOCTOR')) {
+            $doctor = Doctor::where('user_id', $user->id)->first();
+            if ($doctor) {
+                return redirect()->route('schedules.edit', $doctor->id);
+            }
+        }
+
         $query = Doctor::with(['user', 'medicalServices', 'specialties']);
 
         if ($request->search) {
@@ -38,6 +46,11 @@ class DoctorScheduleController extends Controller implements HasMiddleware
     public function edit($id)
     {
         $doctor = Doctor::with('user')->findOrFail($id);
+        
+        // Sécurité : Un docteur ne peut éditer que son propre planning
+        if (auth()->user()->hasRole('DOCTOR') && $doctor->user_id !== auth()->id()) {
+            abort(403, "Vous n'êtes pas autorisé à modifier le planning d'un autre médecin.");
+        }
         
         // Initialiser l'availability si vide
         $defaultAvailability = [

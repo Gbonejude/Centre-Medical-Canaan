@@ -82,7 +82,6 @@ class AppointmentController extends Controller implements HasMiddleware
             'status' => 'PENDING',
         ]);
 
-        // Dispatch Emails
         dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'requested_patient'));
         dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'new_request_staff'));
 
@@ -92,8 +91,8 @@ class AppointmentController extends Controller implements HasMiddleware
     public function mine()
     {
         $patientId = auth()->id() ?? auth()->guard('guest')->id();
-        
-        $appointments = Appointment::with(['medicalService', 'doctor.user'])
+
+        $appointments = Appointment::with(['medicalService', 'doctor'])
             ->where('patient_id', $patientId)
             ->latest()
             ->get();
@@ -106,31 +105,38 @@ class AppointmentController extends Controller implements HasMiddleware
     public function assignDoctor(Request $request, $id)
     {
         $appointment = Appointment::findOrFail($id);
-        
+
         $validated = $request->validate([
             'doctor_id' => 'required|exists:doctors,id',
             'notes' => 'nullable|string',
+            'receptionist_notes' => 'nullable|string',
         ]);
 
         $doctor = Doctor::with('user')->findOrFail($validated['doctor_id']);
+        $notes = $validated['notes'] ?? $validated['receptionist_notes'] ?? null;
 
         $appointment->update([
             'doctor_id' => $doctor->user_id,
-            'receptionist_notes' => $validated['notes'],
+            'receptionist_notes' => $notes,
             'status' => 'CONFIRMED',
             'confirmed_at' => now(),
         ]);
 
         dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'status_changed'));
+        dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'assigned_doctor'));
 
         return back()->with('success', "Le Dr. {$doctor->user->lastname} a été affecté au rendez-vous.");
     }
 
     public function show(Appointment $appointment)
     {
+        $user = auth()->user();
+        $isDoctor = $user->hasRole('DOCTOR') && !$user->hasAnyRole(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+
         $appointment->load(['patient', 'doctor', 'medicalService']);
         return Inertia::render('backoffice/appointments/show', [
             'appointment' => $appointment,
+            'isDoctor' => $isDoctor,
             'doctors' => Doctor::with('user')->where('medical_service_id', $appointment->medical_service_id)->where('is_available', true)->get(),
         ]);
     }
@@ -142,10 +148,17 @@ class AppointmentController extends Controller implements HasMiddleware
             'notes' => 'nullable|string',
         ]);
 
+        $user = auth()->user();
+        $isDoctorOnly = $user->hasRole('DOCTOR') && !$user->hasAnyRole(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+
+        if ($isDoctorOnly && in_array($validated['status'], ['CANCELLED', 'POSTPONED'])) {
+            return back()->with('error', "Vous n'êtes pas autorisé à annuler ou reporter un rendez-vous. Veuillez contacter la réception.");
+        }
+
         $updateData = ['status' => $validated['status']];
         $notes = $validated['notes'] ?? null;
 
-        if (auth()->user() && auth()->user()->hasRole('DOCTOR')) {
+        if ($isDoctorOnly) {
             $updateData['doctor_notes'] = $notes;
         } else {
             $updateData['receptionist_notes'] = $notes;

@@ -11,9 +11,9 @@
                         />
                     </div>
                     <div class="ccs-pwa-text">
-                        <h6 class="ccs-pwa-title">Canaan Care Services</h6>
+                        <h6 class="ccs-pwa-title">Centre Médical Canaan</h6>
                         <p class="ccs-pwa-desc">
-                            Installer Canaan Care Services sur votre écran
+                            Installer Centre Médical Canaan sur votre écran
                             d'accueil pour un accès plus rapide.
                         </p>
                     </div>

@@ -88,7 +88,7 @@
                                     <div class="input-wrapper">
                                         <select class="form-control" v-model="assignForm.doctor_id" required>
                                             <option value="" disabled>Sélectionner un docteur</option>
-                                            <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.user_id">
+                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.user_id">
                                                 Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} ({{ doctor.user.phone || 'Pas de tél' }})
                                             </option>
                                         </select>
@@ -110,22 +110,36 @@
                         </div>
                     </div>
 
-                    <!-- Changement de Statut -->
-                    <div class="card action-card" v-else>
+                    <!-- Changement de Statut (Visible pour tous les statuts sauf COMPLETED) -->
+                    <div class="card action-card" v-if="appointment.status !== 'COMPLETED'">
                         <div class="card-header">
-                            <div class="card-title">Modifier le Statut</div>
+                            <div class="card-title">Actions Rapides</div>
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
+                                <!-- Terminer (Seulement si confirmé) -->
                                 <button v-if="appointment.status === 'CONFIRMED'" @click="updateStatus('COMPLETED')" class="btn btn-success">
                                     <i class="fa fa-check-double me-1"></i> Marquer comme Terminé
                                 </button>
-                                <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('CANCELLED')" class="btn btn-outline-danger">
-                                    <i class="fa fa-times-circle me-1"></i> Annuler le Rendez-vous
-                                </button>
-                                <div class="text-center mt-3" v-if="appointment.status === 'COMPLETED'">
-                                    <div class="alert alert-success py-2">Ce rendez-vous est déjà terminé.</div>
-                                </div>
+                                
+                                <!-- Annuler/Reporter (Seulement pour réception/admin) -->
+                                <template v-if="!isDoctor">
+                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('CANCELLED')" class="btn btn-outline-danger">
+                                        <i class="fa fa-times-circle me-1"></i> Annuler le Rendez-vous
+                                    </button>
+                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('POSTPONED')" class="btn btn-outline-warning">
+                                        <i class="fa fa-clock me-1"></i> Reporter le Rendez-vous
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message si déjà terminé -->
+                    <div class="card action-card mt-3" v-if="appointment.status === 'COMPLETED'">
+                        <div class="card-body">
+                            <div class="alert alert-success py-2 mb-0">
+                                <i class="fa fa-check-circle me-1"></i> Ce rendez-vous est déjà terminé.
                             </div>
                         </div>
                     </div>
@@ -137,12 +151,39 @@
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
 
 const props = defineProps({
     appointment: Object,
+    isDoctor: Boolean,
     doctors: Array,
+});
+
+const filteredDoctors = computed(() => {
+    const appDate = props.appointment.appointment_date;
+    const appTime = props.appointment.appointment_time.substring(0, 5); // HH:MM
+    
+    // Day of week
+    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dateObj = new Date(appDate);
+    const dayKey = daysMap[dateObj.getDay()];
+
+    return props.doctors.filter(d => {
+        // Filter by availability (Planning)
+        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
+            return false;
+        }
+
+        const slots = d.availability[dayKey].slots;
+        if (!slots || slots.length === 0) return false;
+
+        // Check if appointment time falls within any of the doctor's slots
+        return slots.some(slot => {
+            return appTime >= slot.start && appTime <= slot.end;
+        });
+    });
 });
 
 const toast = useToast();
