@@ -42,6 +42,23 @@
                                 </select>
                             </div>
 
+                            <!-- Filtre Docteur (Multi-select) -->
+                            <div class="filter-item dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="doctorFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                    {{ doctorFilter.length > 0 ? (doctorFilter.length === 1 ? '1 médecin' : doctorFilter.length + ' médecins') : 'Tous les médecins' }}
+                                </button>
+                                <ul class="dropdown-menu p-3" aria-labelledby="doctorFilterDropdown" style="min-width: 250px; max-height: 300px; overflow-y: auto;">
+                                    <li v-for="doctor in sortedDoctors" :key="doctor.id" class="mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" :value="doctor.user_id" v-model="doctorFilter" :id="'doctor_' + doctor.id">
+                                            <label class="form-check-label" :for="'doctor_' + doctor.id">
+                                                Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }}
+                                            </label>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
                             <!-- Recherche -->
                             <div class="search-container">
                                 <input type="text" v-model="searchQuery" placeholder="Rechercher un patient..." class="form-control" />
@@ -114,8 +131,11 @@
                                 <tr v-for="app in paginatedAppointments" :key="app.id" class="user-row">
                                     <td>
                                         <div class="user-info">
-                                            <div class="user-name">{{ app.patient?.lastname }} {{ app.patient?.firstname }}</div>
-                                            <div class="text-muted small">{{ app.patient?.phone || 'Pas de tél' }}</div>
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="appt-ref-number">#{{ app.reference }}</span>
+                                                <div class="user-name">{{ app.patient?.lastname }} {{ app.patient?.firstname }}</div>
+                                            </div>
+                                            <div class="text-muted small ps-1">{{ app.patient?.phone || 'Pas de tél' }}</div>
                                         </div>
                                     </td>
                                     <td>
@@ -265,11 +285,20 @@ const props = defineProps({
     isDoctor: Boolean,
 });
 
+const sortedDoctors = computed(() => {
+    return [...props.availableDoctors].sort((a, b) => {
+        const nameA = `${a.user?.lastname} ${a.user?.firstname}`.toLowerCase();
+        const nameB = `${b.user?.lastname} ${b.user?.firstname}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+});
+
 const toast = useToast();
 const currentTab = ref('all');
 const searchQuery = ref('');
 const dateFilter = ref('');
 const statusFilter = ref('');
+const doctorFilter = ref([]);
 const showModal = ref(false);
 const selectedApp = ref(null);
 const currentPage = ref(1);
@@ -304,10 +333,12 @@ const filteredAppointments = computed(() => {
     return allAppointments.value.filter(a => {
         if (dateFilter.value && !a.appointment_date?.startsWith(dateFilter.value)) return false;
         if (statusFilter.value && a.status !== statusFilter.value) return false;
+        if (doctorFilter.value.length > 0 && !doctorFilter.value.includes(a.doctor_id)) return false;
         if (searchQuery.value) {
             const search = searchQuery.value.toLowerCase();
             const fullName = `${a.patient?.firstname ?? ''} ${a.patient?.lastname ?? ''}`.toLowerCase();
-            if (!fullName.includes(search)) return false;
+            const ref = (a.reference ?? '').toLowerCase();
+            if (!fullName.includes(search) && !ref.includes(search)) return false;
         }
         return true;
     });
@@ -327,7 +358,7 @@ watch([filteredAppointments], () => { currentPage.value = 1; });
 
 // ── Has active filters ──
 const hasActiveFilters = computed(() =>
-    !!dateFilter.value || !!statusFilter.value || !!searchQuery.value
+    !!dateFilter.value || !!statusFilter.value || doctorFilter.value.length > 0 || !!searchQuery.value
 );
 
 // ── Set today filter ──
@@ -341,6 +372,7 @@ function resetFilters() {
     searchQuery.value = '';
     dateFilter.value = '';
     statusFilter.value = '';
+    doctorFilter.value = [];
 }
 
 // ── Doctors filtered by service and availability ──
@@ -585,5 +617,16 @@ $border-radius: 0.75rem;
             &:hover { background: rgba($primary-color, 0.08); }
         }
     }
+}
+.appt-ref-number {
+    background-color: rgba($primary-color, 0.08);
+    color: $primary-color;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba($primary-color, 0.2);
+    font-family: 'Monaco', 'Consolas', monospace;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 </style>

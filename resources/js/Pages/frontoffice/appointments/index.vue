@@ -29,7 +29,7 @@
                                     {{ translateStatus(appt.status) }}
                                 </span>
                                 <span class="text-muted small">
-                                    Ref: #{{ appt.id }}
+                                    Ref: #{{ appt.reference }}
                                 </span>
                             </div>
 

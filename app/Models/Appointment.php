@@ -13,6 +13,7 @@ class Appointment extends Model
 
     protected $fillable = [
         'uuid',
+        'reference',
         'patient_id',
         'medical_service_id',
         'doctor_id',
@@ -35,7 +36,17 @@ class Appointment extends Model
         parent::boot();
         static::creating(function ($model) {
             $model->uuid = (string) Str::uuid();
+            $model->reference = self::generateUniqueReference();
         });
+    }
+
+    private static function generateUniqueReference()
+    {
+        do {
+            $reference = str_pad(mt_rand(1, 9999999), 7, '0', STR_PAD_LEFT);
+        } while (self::where('reference', $reference)->exists());
+
+        return $reference;
     }
 
     public function patient()
