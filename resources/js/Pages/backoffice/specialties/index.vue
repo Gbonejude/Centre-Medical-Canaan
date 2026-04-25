@@ -70,7 +70,7 @@
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <Link :href="route('specialties.edit', specialty.id)"
+                                            <Link :href="route('specialties.edit', specialty.uuid)"
                                                 class="btn btn-sm btn-outline-primary" title="Modifier">
                                                 <i class="fa fa-edit"></i>
                                             </Link>
@@ -138,7 +138,7 @@ const handleSearch = debounce(() => {
 }, 500);
 
 function toggleStatus(specialty) {
-    router.patch(route('specialties.toggle-status', specialty.id), {}, {
+    router.patch(route('specialties.toggle-status', specialty.uuid), {}, {
         preserveScroll: true,
         onSuccess: () => {
             toast.success('Statut mis à jour');
@@ -159,7 +159,7 @@ function confirmDelete(specialty) {
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('specialties.destroy', specialty.id), {
+            router.delete(route('specialties.destroy', specialty.uuid), {
                 onSuccess: () => {
                     toast.success('Spécialité supprimée avec succès');
                 },

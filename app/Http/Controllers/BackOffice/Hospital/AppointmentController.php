@@ -18,7 +18,7 @@ class AppointmentController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR', except: ['create', 'store', 'mine']),
+            new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR', except: ['create', 'store', 'mine', 'editFront', 'updateFront', 'cancelFront']),
         ];
     }
     public function index(Request $request)
@@ -50,7 +50,7 @@ class AppointmentController extends Controller implements HasMiddleware
             'appointments'     => $query->latest()->get(),
             'stats'            => $stats,
             'isDoctor'         => $isDoctor,
-            'availableDoctors' => Doctor::with(['user', 'specialty'])->where('is_available', true)->get(),
+            'availableDoctors' => Doctor::with(['user', 'specialty', 'medicalService'])->where('is_available', true)->get(),
         ]);
     }
 
@@ -102,9 +102,9 @@ class AppointmentController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function assignDoctor(Request $request, $id)
+    public function assignDoctor(Request $request, $uuid)
     {
-        $appointment = Appointment::findOrFail($id);
+        $appointment = Appointment::where('uuid', $uuid)->firstOrFail();
 
         $validated = $request->validate([
             'doctor_id' => 'required|exists:doctors,id',
@@ -137,27 +137,40 @@ class AppointmentController extends Controller implements HasMiddleware
         return Inertia::render('backoffice/appointments/show', [
             'appointment' => $appointment,
             'isDoctor' => $isDoctor,
-            'doctors' => Doctor::with('user')->where('medical_service_id', $appointment->medical_service_id)->where('is_available', true)->get(),
+            'doctors' => Doctor::with(['user', 'specialty', 'medicalService'])
+                ->where('is_available', true)
+                ->when($appointment->medicalService->name !== 'Autres', function($q) use ($appointment) {
+                    return $q->where('medical_service_id', $appointment->medical_service_id);
+                })
+                ->get(),
         ]);
     }
 
     public function updateStatus(Request $request, Appointment $appointment)
     {
         $validated = $request->validate([
-            'status' => 'required|in:COMPLETED,CANCELLED,POSTPONED',
+            'status' => 'required|in:COMPLETED,CANCELLED,POSTPONED,PENDING,CONFIRMED',
             'notes' => 'nullable|string',
+            'appointment_date' => 'nullable|date|after_or_equal:today',
+            'appointment_time' => 'nullable',
         ]);
 
         $user = auth()->user();
-        $isDoctorOnly = $user->hasRole('DOCTOR') && !$user->hasAnyRole(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctorOnly = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         if ($isDoctorOnly && in_array($validated['status'], ['CANCELLED', 'POSTPONED'])) {
             return back()->with('error', "Vous n'êtes pas autorisé à annuler ou reporter un rendez-vous. Veuillez contacter la réception.");
         }
 
         $updateData = ['status' => $validated['status']];
-        $notes = $validated['notes'] ?? null;
+        
+        if ($validated['status'] === 'POSTPONED') {
+            if ($validated['appointment_date']) $updateData['appointment_date'] = $validated['appointment_date'];
+            if ($validated['appointment_time']) $updateData['appointment_time'] = $validated['appointment_time'];
+            $updateData['doctor_id'] = null; // On désaffecte le médecin pour forcer une nouvelle affectation
+        }
 
+        $notes = $validated['notes'] ?? null;
         if ($isDoctorOnly) {
             $updateData['doctor_notes'] = $notes;
         } else {
@@ -169,5 +182,81 @@ class AppointmentController extends Controller implements HasMiddleware
         dispatch(new \App\Jobs\SendAppointmentEmailJob($appointment, 'status_changed'));
 
         return back()->with('success', 'Statut du rendez-vous mis à jour.');
+    }
+
+    public function cancelFront(Request $request, Appointment $appointment)
+    {
+        $user = auth('guest')->user();
+        
+        if (!$user || $appointment->patient_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($appointment->status !== 'PENDING') {
+            return back()->with('error', 'Vous ne pouvez plus annuler ce rendez-vous car il est déjà confirmé ou traité. Veuillez contacter la clinique.');
+        }
+
+        $appointment->update(['status' => 'CANCELLED']);
+
+        return back()->with('success', 'Votre rendez-vous a été annulé avec succès.');
+    }
+
+    public function editFront(Request $request, Appointment $appointment)
+    {
+        $user = auth('guest')->user();
+
+        if (!$user || $appointment->patient_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($appointment->status !== 'PENDING') {
+            return redirect()->route('front.appointments.mine')->with('error', 'Seuls les rendez-vous en attente peuvent être modifiés.');
+        }
+
+        return Inertia::render('frontoffice/appointments/edit', [
+            'appointment' => $appointment,
+            'services' => MedicalService::where('is_active', true)->orderBy('name')->get(),
+        ]);
+    }
+
+    public function updateFront(Request $request, Appointment $appointment)
+    {
+        $user = auth('guest')->user();
+
+        if (!$user || $appointment->patient_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($appointment->status !== 'PENDING') {
+            return back()->with('error', 'Seuls les rendez-vous en attente peuvent être modifiés.');
+        }
+
+        $validated = $request->validate([
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required',
+            'medical_service_id' => 'required|exists:medical_services,id',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $appointment->update($validated);
+
+        return redirect()->route('front.appointments.mine')->with('success', 'Votre rendez-vous a été modifié avec succès.');
+    }
+
+    public function destroyFront(Request $request, Appointment $appointment)
+    {
+        $user = auth('guest')->user();
+
+        if (!$user || $appointment->patient_id !== $user->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($appointment->status !== 'CANCELLED') {
+            return back()->with('error', 'Seuls les rendez-vous annulés peuvent être supprimés.');
+        }
+
+        $appointment->delete();
+
+        return back()->with('success', 'Le rendez-vous a été supprimé de votre historique.');
     }
 }

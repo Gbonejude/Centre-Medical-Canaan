@@ -41,6 +41,10 @@ Route::domain($domain)->group(function () {
     Route::middleware('guest.auth')->group(function () {
         Route::get('/appointments/booking', [AppointmentController::class, 'create'])->name('front.appointments.create');
         Route::post('/appointments/booking', [AppointmentController::class, 'store'])->name('front.appointments.store');
+        Route::get('/appointments/{appointment}/edit', [AppointmentController::class, 'editFront'])->name('front.appointments.edit');
+        Route::put('/appointments/{appointment}', [AppointmentController::class, 'updateFront'])->name('front.appointments.update');
+        Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancelFront'])->name('front.appointments.cancel');
+        Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroyFront'])->name('front.appointments.destroy');
         Route::get('/my-appointments', [AppointmentController::class, 'mine'])->name('front.appointments.mine');
 
         // Patient Profile

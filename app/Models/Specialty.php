@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Uuid;
 
 class Specialty extends Model
 {
-    use HasFactory;
+    use HasFactory, Uuid;
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $fillable = ['name', 'slug', 'description', 'is_active'];
 

@@ -87,8 +87,13 @@
                       <label for="password" class="form-label">
                          <i class="fas fa-lock me-2"></i>Mot de passe
                        </label>
-                       <input id="password" v-model="form.password" type="password" class="form-control"
-                         :class="{ 'is-invalid': form.errors.password }" placeholder="Entrez votre mot de passe" />
+                       <div class="password-input-group">
+                         <input id="password" v-model="form.password" :type="showPassword ? 'text' : 'password'" class="form-control"
+                           :class="{ 'is-invalid': form.errors.password }" placeholder="Entrez votre mot de passe" />
+                         <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+                           <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                         </button>
+                       </div>
                       <div v-if="errors.password" class="invalid-feedback">
                                 {{ errors.password[0] }}
                             </div>
@@ -100,9 +105,14 @@
                       <label for="password_confirmation" class="form-label">
                          <i class="fas fa-check-circle me-2"></i>Confirmer le mot de passe
                        </label>
-                       <input id="password_confirmation" v-model="form.password_confirmation" type="password"
-                         class="form-control" :class="{ 'is-invalid': form.errors.password_confirmation }"
-                         placeholder="Confirmez votre mot de passe" />
+                       <div class="password-input-group">
+                         <input id="password_confirmation" v-model="form.password_confirmation" :type="showPasswordConfirmation ? 'text' : 'password'"
+                           class="form-control" :class="{ 'is-invalid': form.errors.password_confirmation }"
+                           placeholder="Confirmez votre mot de passe" />
+                         <button type="button" class="password-toggle" @click="showPasswordConfirmation = !showPasswordConfirmation">
+                           <i :class="showPasswordConfirmation ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                         </button>
+                       </div>
 
                        <div v-if="errors.password_confirmation" class="invalid-feedback">
                                 {{ errors.password_confirmation[0] }}
@@ -139,7 +149,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useForm, Link, usePage } from '@inertiajs/vue3'
 import { useToast } from 'vue-toastification';
 import { VueTelInput } from 'vue-tel-input';
@@ -148,6 +158,8 @@ import 'vue-tel-input/vue-tel-input.css';
 const toast = useToast();
 const page = usePage();
 const isPhoneValid = ref(false);
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
 const props = defineProps({
   errors: Object,
 });
@@ -162,6 +174,12 @@ const form = useForm({
   active: true,
 })
 
+watch(() => form.phone, (newVal) => {
+  if (newVal) {
+    form.phone = newVal.replace(/[^\d+]/g, '');
+  }
+});
+
 const submit = () => {
   if (!isPhoneValid.value) {
     toast.error("Veuillez entrer un numéro de téléphone valide");
@@ -172,33 +190,17 @@ const submit = () => {
       form.reset('password', 'password_confirmation')
     },
     onSuccess: () => {
-      toast.success('Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.', {
-        position: "top-right",
-        timeout: 5000,
-        closeOnClick: true,
-        pauseOnHover: true,
-      });
-      
+      if (page.props.flash && page.props.flash.error) {
+        toast.error(page.props.flash.error);
+        return;
+      }
+      if (page.props.flash && page.props.flash.success) {
+        toast.success(page.props.flash.success);
+      }
     },
     onError: (errors) => {
-      console.error('Form validation errors:', errors);
-
-      
-      if (page.props.flash && page.props.flash.error) {
-        toast.error(page.props.flash.error, {
-          position: 'top-right',
-          timeout: 5000,
-          closeOnClick: true,
-          pauseOnHover: true,
-        });
-      } else {
-        toast.error('Une erreur est survenue lors de la création de votre compte. Veuillez réessayer.', {
-          position: 'top-right',
-          timeout: 5000,
-          closeOnClick: true,
-          pauseOnHover: true,
-        });
-      }
+      console.log('Form validation errors:', errors);
+      toast.error('Veuillez corriger les erreurs dans le formulaire.');
     }
   })
 }
@@ -324,6 +326,35 @@ const submit = () => {
 
 .form-control.is-invalid {
   border-color: #dc3545;
+}
+
+.password-input-group {
+  position: relative;
+}
+
+.password-input-group .form-control {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  color: #3b5998;
 }
 
 .invalid-feedback {

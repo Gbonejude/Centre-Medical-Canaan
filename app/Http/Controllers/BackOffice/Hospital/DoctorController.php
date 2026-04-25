@@ -30,7 +30,7 @@ class DoctorController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         return Inertia::render('backoffice/doctors/index', [
-            'doctors' => Doctor::with(['user', 'medicalServices', 'specialties'])->latest()->get(),
+            'doctors' => Doctor::with(['user', 'medicalService', 'specialties'])->latest()->get(),
         ]);
     }
 
@@ -46,15 +46,15 @@ class DoctorController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
-            'lastname' => 'required|string|max:255',
-            'email' => 'required|email:rfc,dns|unique:users,email',
-            'service_ids' => 'required|array|min:1',
-            'service_ids.*' => 'exists:medical_services,id',
+            'lastname'  => 'required|string|max:255',
+            'email'     => 'required|email:rfc,dns|unique:users,email',
+            'service_id'    => 'required|exists:medical_services,id',
             'specialty_ids' => 'required|array|min:1',
             'specialty_ids.*' => 'exists:specialties,id',
-            'bio' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'gender' => 'nullable|string',
+            'bio'      => 'nullable|string',
+            'phone'    => 'nullable|string',
+            'gender'   => 'nullable|string',
+            'birthday' => 'nullable|date',
         ]);
 
         $passwordGenerate = $this->generatePassword();
@@ -62,26 +62,27 @@ class DoctorController extends Controller implements HasMiddleware
         DB::transaction(function() use ($validated, $passwordGenerate) {
             $user = User::create([
                 'firstname' => $validated['firstname'],
-                'lastname' => $validated['lastname'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'gender' => $validated['gender'] ?? null,
-                'password' => Hash::make($passwordGenerate),
+                'lastname'  => $validated['lastname'],
+                'email'     => $validated['email'],
+                'phone'     => $validated['phone'] ?? null,
+                'gender'    => $validated['gender'] ?? null,
+                'birthday'  => $validated['birthday'] ?? null,
+                'password'  => Hash::make($passwordGenerate),
                 'email_verified_at' => now(),
             ]);
 
             // Assignation automatique du rôle DOCTOR
-            $user->assignRole('DOCTOR');
+            $user->givePermissionTo('DOCTOR');
 
             $doctor = Doctor::create([
-                'user_id' => $user->id,
-                'medical_service_id' => $validated['service_ids'][0],
-                'specialty_id' => $validated['specialty_ids'][0],
-                'bio' => $validated['bio'],
+                'user_id'            => $user->id,
+                'medical_service_id' => $validated['service_id'],
+                'specialty_id'       => $validated['specialty_ids'][0],
+                'bio'         => $validated['bio'],
                 'is_available' => true,
             ]);
 
-            $doctor->medicalServices()->sync($validated['service_ids']);
+            // Many-to-many spécialités uniquement
             $doctor->specialties()->sync($validated['specialty_ids']);
 
             Mail::to($user->email)->send(new NewUserMail($user->email, $passwordGenerate));
@@ -90,9 +91,9 @@ class DoctorController extends Controller implements HasMiddleware
         return redirect()->route('doctors.index')->with('success', 'Médecin ajouté avec succès.');
     }
 
-    public function show($id)
+    public function show($uuid)
     {
-        $doctor = Doctor::with(['user', 'medicalServices', 'specialties'])->findOrFail($id);
+        $doctor = Doctor::with(['user', 'medicalService', 'specialties'])->where('uuid', $uuid)->firstOrFail();
         
         return Inertia::render('backoffice/doctors/show', [
             'doctor' => $doctor,
@@ -100,9 +101,9 @@ class DoctorController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function edit($id)
+    public function edit($uuid)
     {
-        $doctor = Doctor::with(['user', 'medicalServices', 'specialties'])->findOrFail($id);
+        $doctor = Doctor::with(['user', 'medicalService', 'specialties'])->where('uuid', $uuid)->firstOrFail();
         
         return Inertia::render('backoffice/doctors/edit', [
             'doctor' => $doctor,
@@ -111,61 +112,62 @@ class DoctorController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $uuid)
     {
-        $doctor = Doctor::findOrFail($id);
+        $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
         
         $validated = $request->validate([
             'firstname' => 'required|string|max:255',
-            'lastname' => 'required|string|max:255',
-            'email' => 'required|email:rfc,dns|unique:users,email,'.$doctor->user_id,
-            'service_ids' => 'required|array|min:1',
-            'service_ids.*' => 'exists:medical_services,id',
+            'lastname'  => 'required|string|max:255',
+            'email'     => 'required|email:rfc,dns|unique:users,email,'.$doctor->user_id,
+            'service_id'    => 'required|exists:medical_services,id',
             'specialty_ids' => 'required|array|min:1',
             'specialty_ids.*' => 'exists:specialties,id',
-            'bio' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'gender' => 'nullable|string',
+            'bio'          => 'nullable|string',
+            'phone'        => 'nullable|string',
+            'gender'       => 'nullable|string',
+            'birthday'     => 'nullable|date',
             'is_available' => 'boolean',
         ]);
 
         DB::transaction(function() use ($validated, $doctor) {
             $doctor->user->update([
                 'firstname' => $validated['firstname'],
-                'lastname' => $validated['lastname'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? $doctor->user->phone,
-                'gender' => $validated['gender'] ?? $doctor->user->gender,
+                'lastname'  => $validated['lastname'],
+                'email'     => $validated['email'],
+                'phone'     => $validated['phone'] ?? $doctor->user->phone,
+                'gender'    => $validated['gender'] ?? $doctor->user->gender,
+                'birthday'  => $validated['birthday'] ?? $doctor->user->birthday,
             ]);
 
-            // S'assurer qu'il a toujours le rôle DOCTOR
-            if (!$doctor->user->hasRole('DOCTOR')) {
-                $doctor->user->assignRole('DOCTOR');
+            // S'assurer qu'il a toujours la permission DOCTOR
+            if (!$doctor->user->hasPermissionTo('DOCTOR')) {
+                $doctor->user->givePermissionTo('DOCTOR');
             }
 
             $doctor->update([
-                'medical_service_id' => $validated['service_ids'][0],
-                'specialty_id' => $validated['specialty_ids'][0],
-                'bio' => $validated['bio'],
+                'medical_service_id' => $validated['service_id'],
+                'specialty_id'       => $validated['specialty_ids'][0],
+                'bio'         => $validated['bio'],
                 'is_available' => $validated['is_available'] ?? true,
             ]);
 
-            $doctor->medicalServices()->sync($validated['service_ids']);
+            // Many-to-many spécialités uniquement
             $doctor->specialties()->sync($validated['specialty_ids']);
         });
 
         return redirect()->route('doctors.index')->with('success', 'Informations du médecin mises à jour.');
     }
 
-    public function destroy($id)
+    public function destroy($uuid)
     {
-        $doctor = Doctor::findOrFail($id);
+        $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
         $user = $doctor->user;
         
         DB::transaction(function() use ($doctor, $user) {
             $doctor->delete();
             if ($user) {
-                $user->removeRole('DOCTOR');
+                $user->revokePermissionTo('DOCTOR');
                 $user->delete();
             }
         });
@@ -173,9 +175,9 @@ class DoctorController extends Controller implements HasMiddleware
         return back()->with('success', 'Médecin supprimé avec succès.');
     }
 
-    public function toggleAvailability($id)
+    public function toggleAvailability($uuid)
     {
-        $doctor = Doctor::with('user')->findOrFail($id);
+        $doctor = Doctor::with('user')->where('uuid', $uuid)->firstOrFail();
         $doctor->is_available = !$doctor->is_available;
         $doctor->save();
 

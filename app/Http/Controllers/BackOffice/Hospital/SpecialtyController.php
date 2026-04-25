@@ -57,17 +57,17 @@ class SpecialtyController extends Controller implements HasMiddleware
         return redirect()->route('specialties.index')->with('success', 'Spécialité créée avec succès.');
     }
 
-    public function edit($id)
+    public function edit($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
         return Inertia::render('backoffice/specialties/edit', [
             'specialty' => $specialty
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:specialties,name,' . $specialty->id,
@@ -85,9 +85,9 @@ class SpecialtyController extends Controller implements HasMiddleware
         return redirect()->route('specialties.index')->with('success', 'Spécialité mise à jour avec succès.');
     }
 
-    public function destroy($id)
+    public function destroy($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
         
         if ($specialty->doctors()->count() > 0) {
             return back()->with('error', 'Impossible de supprimer cette spécialité car elle est liée à des médecins.');
@@ -97,9 +97,9 @@ class SpecialtyController extends Controller implements HasMiddleware
         return back()->with('success', 'Spécialité supprimée avec succès.');
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
         $specialty->is_active = !$specialty->is_active;
         $specialty->save();
 

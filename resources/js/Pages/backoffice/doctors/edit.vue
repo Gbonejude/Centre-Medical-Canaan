@@ -70,11 +70,47 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="phone">Téléphone</label>
+                                        <div :class="['phone-input-wrapper', { 'phone-input-wrapper--invalid': form.errors.phone }]">
+                                            <VueTelInput
+                                                v-model="form.phone"
+                                                mode="international"
+                                                default-country="TG"
+                                                :auto-default-country="true"
+                                                :dropdown-options="phoneDropdownOptions"
+                                                :input-options="getPhoneInputOptions(form.errors.phone)"
+                                                @validate="(state) => isPhoneValid = state.valid"
+                                                style-classes="phone-input"
+                                            />
+                                        </div>
+                                        <div v-if="form.errors.phone" class="error-message">{{ form.errors.phone }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="birthday">Date de naissance</label>
                                         <div class="input-wrapper">
-                                            <i class="fa fa-phone input-icon"></i>
-                                            <input id="phone" type="text" class="form-control"
-                                                v-model="form.phone" placeholder="+228..."
-                                                :class="{ 'is-invalid': form.errors.phone }" />
+                                            <i class="fa fa-calendar input-icon"></i>
+                                            <input id="birthday" type="date" class="form-control"
+                                                v-model="form.birthday"
+                                                :class="{ 'is-invalid': form.errors.birthday }" />
+                                        </div>
+                                        <div v-if="form.errors.birthday" class="error-message">{{ form.errors.birthday }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Genre <span class="required">*</span></label>
+                                        <div class="gender-selection d-flex gap-4 mt-2">
+                                            <label class="radio-label">
+                                                <input type="radio" v-model="form.gender" value="male" />
+                                                <span>Masculin</span>
+                                            </label>
+                                            <label class="radio-label">
+                                                <input type="radio" v-model="form.gender" value="female" />
+                                                <span>Féminin</span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -87,21 +123,20 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Services Médicaux <span class="required">*</span></label>
+                                        <label>Service Médical <span class="required">*</span></label>
                                         <div class="input-wrapper">
                                             <i class="fa fa-hospital input-icon"></i>
                                             <v-select
-                                                v-model="form.service_ids"
+                                                v-model="form.service_id"
                                                 :options="services"
                                                 :reduce="service => service.id"
                                                 label="name"
-                                                placeholder="Choisir les services..."
+                                                placeholder="Choisir le service..."
                                                 class="custom-v-select"
-                                                :class="{ 'is-invalid': form.errors.service_ids }"
-                                                multiple
+                                                :class="{ 'is-invalid': form.errors.service_id }"
                                             />
                                         </div>
-                                        <div v-if="form.errors.service_ids" class="error-message">{{ form.errors.service_ids }}</div>
+                                        <div v-if="form.errors.service_id" class="error-message">{{ form.errors.service_id }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -172,9 +207,12 @@
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { useToast } from "vue-toastification";
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
+import { VueTelInput } from 'vue-tel-input';
+import 'vue-tel-input/vue-tel-input.css';
 
 const props = defineProps({
     doctor: Object,
@@ -183,20 +221,38 @@ const props = defineProps({
 });
 
 const toast = useToast();
+const isPhoneValid = ref(false);
+
+const phoneDropdownOptions = {
+    disabled: false,
+    showFlags: true,
+    showDialCodeInSelection: true,
+    showDialCodeInList: true,
+    showSearchBox: true,
+};
+
+const getPhoneInputOptions = (hasError) => ({
+    id: 'phone',
+    name: 'phone',
+    placeholder: 'Ex: 90 00 00 00',
+    styleClasses: hasError ? 'form-control phone-input-control is-invalid' : 'form-control phone-input-control',
+});
+
 const form = useForm({
     firstname: props.doctor.user.firstname,
-    lastname: props.doctor.user.lastname,
-    email: props.doctor.user.email,
-    phone: props.doctor.user.phone,
-    service_ids: props.doctor.medical_services.map(s => s.id),
+    lastname:  props.doctor.user.lastname,
+    email:     props.doctor.user.email,
+    phone:     props.doctor.user.phone,
+    service_id:    props.doctor.medical_service_id,
     specialty_ids: props.doctor.specialties.map(s => s.id),
-    bio: props.doctor.bio,
+    bio:          props.doctor.bio,
     is_available: props.doctor.is_available,
-    gender: props.doctor.user.gender || 'male',
+    gender:       props.doctor.user.gender || 'male',
+    birthday:     props.doctor.user.birthday || '',
 });
 
 function update() {
-    form.put(route("doctors.update", props.doctor.id), {
+    form.put(route("doctors.update", props.doctor.uuid), {
         onSuccess: () => {
             toast.success('Médecin mis à jour avec succès');
         },
@@ -222,7 +278,7 @@ $border-radius: 0.475rem;
 
 .form-section { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px dashed $border-color; &:last-child { border-bottom: none; } .section-title { font-weight: 600; color: $secondary-color; margin-bottom: 1.25rem; padding-left: 0.75rem; position: relative; &::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: $primary-color; border-radius: 4px; } } }
 
-.form-group { label { font-weight: 600; margin-bottom: 0.5rem; display: block; .required { color: $danger-color; } } .input-wrapper { position: relative; .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; z-index: 10; pointer-events: none; } .form-control { padding: 0.6rem 1rem 0.6rem 2.5rem; border-radius: 8px; border: 1px solid $border-color; &:focus { border-color: $primary-color; box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.1); } } } .error-message { color: $danger-color; font-size: 0.8rem; margin-top: 0.4rem; } }
+.form-group { label { font-weight: 600; margin-bottom: 0.5rem; display: block; .required { color: $danger-color; } } .input-wrapper { position: relative; .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; z-index: 10; pointer-events: none; } .form-control { padding: 0.6rem 1rem 0.6rem 2.5rem; border-radius: 8px; border: 1px solid $border-color; &:focus { border-color: $primary-color; box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.1); } } } .phone-input-wrapper { :deep(.phone-input) { border: 1px solid $border-color; border-radius: $border-radius; &:focus-within { border-color: $primary-color; box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.25); } } :deep(.vti__dropdown) { border-right: 1px solid $border-color; background: #f8f9fa; } &--invalid :deep(.phone-input) { border-color: $danger-color; } } .error-message { color: $danger-color; font-size: 0.8rem; margin-top: 0.4rem; } }
 
 .custom-v-select {
     :deep(.vs__dropdown-toggle) {

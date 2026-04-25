@@ -24,7 +24,7 @@ class DoctorScheduleController extends Controller implements HasMiddleware
         if ($user->hasRole('DOCTOR')) {
             $doctor = Doctor::where('user_id', $user->id)->first();
             if ($doctor) {
-                return redirect()->route('schedules.edit', $doctor->id);
+                return redirect()->route('schedules.edit', $doctor->uuid);
             }
         }
 
@@ -43,9 +43,9 @@ class DoctorScheduleController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function edit($id)
+    public function edit($uuid)
     {
-        $doctor = Doctor::with('user')->findOrFail($id);
+        $doctor = Doctor::with('user')->where('uuid', $uuid)->firstOrFail();
         
         // Sécurité : Un docteur ne peut éditer que son propre planning
         if (auth()->user()->hasRole('DOCTOR') && $doctor->user_id !== auth()->id()) {
@@ -71,9 +71,9 @@ class DoctorScheduleController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $uuid)
     {
-        $doctor = Doctor::findOrFail($id);
+        $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
         
         $validated = $request->validate([
             'availability' => 'required|array',

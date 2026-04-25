@@ -27,18 +27,18 @@ class PatientController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function show($id)
+    public function show($uuid)
     {
-        $patient = Patient::with(['user', 'appointments.doctor'])->findOrFail($id);
+        $patient = Patient::with(['user', 'appointments.doctor'])->where('uuid', $uuid)->firstOrFail();
         
         return Inertia::render('backoffice/patients/show', [
             'patient' => $patient,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($uuid)
     {
-        $patient = Patient::findOrFail($id);
+        $patient = Patient::where('uuid', $uuid)->firstOrFail();
         $user = $patient->user;
         $patient->delete();
         if ($user) {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,12 @@ use Illuminate\Support\Str;
 
 class Appointment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Uuid;
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $fillable = [
         'uuid',
@@ -35,7 +41,6 @@ class Appointment extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            $model->uuid = (string) Str::uuid();
             $model->reference = self::generateUniqueReference();
         });
     }
@@ -62,5 +67,9 @@ class Appointment extends Model
     public function medicalService()
     {
         return $this->belongsTo(MedicalService::class, 'medical_service_id');
+    }
+      public function service()
+    {
+        return $this->medicalService();
     }
 }

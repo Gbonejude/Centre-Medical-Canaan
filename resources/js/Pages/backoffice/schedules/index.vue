@@ -52,7 +52,7 @@
                             </div>
 
                             <div class="card-actions mt-4">
-                                <Link :href="route('schedules.edit', doctor.id)" class="btn btn-primary w-100">
+                                <Link :href="route('schedules.edit', doctor.uuid)" class="btn btn-primary w-100">
                                     <i class="fa fa-clock me-2"></i> Gérer les horaires
                                 </Link>
                             </div>

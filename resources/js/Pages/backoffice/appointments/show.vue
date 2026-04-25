@@ -74,7 +74,7 @@
 
                 <div class="col-lg-5">
                     <!-- Actions d'Affectation -->
-                    <div class="card action-card mb-4" v-if="appointment.status === 'PENDING'">
+                    <div class="card action-card mb-4" v-if="['PENDING', 'POSTPONED'].includes(appointment.status)">
                         <div class="card-header bg-primary text-white">
                             <div class="card-title text-white">
                                 <i class="fa fa-user-md me-2"></i>
@@ -86,12 +86,16 @@
                                 <div class="form-group mb-3">
                                     <label class="form-label">Choisir un médecin disponible <span class="required">*</span></label>
                                     <div class="input-wrapper">
-                                        <select class="form-control" v-model="assignForm.doctor_id" required>
-                                            <option value="" disabled>Sélectionner un docteur</option>
-                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.user_id">
-                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} ({{ doctor.user.phone || 'Pas de tél' }})
+                                        <select class="form-control" v-model="assignForm.doctor_id" required :disabled="filteredDoctors.length === 0">
+                                            <option value="" disabled>{{ filteredDoctors.length === 0 ? 'Aucun médecin pour ce service' : 'Sélectionner un docteur' }}</option>
+                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.id">
+                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} ({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})
                                             </option>
                                         </select>
+                                        <div v-if="filteredDoctors.length === 0" class="alert alert-warning mt-2 py-2 small">
+                                            <i class="fa fa-exclamation-triangle me-1"></i>
+                                            Aucun médecin n'est rattaché au service <strong>{{ appointment.medical_service?.name }}</strong>.
+                                        </div>
                                     </div>
                                     <p class="text-muted small mt-2">
                                         <i class="fa fa-info-circle me-1"></i>
@@ -104,7 +108,7 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100" :disabled="assignForm.processing">
                                     <i class="fa fa-check-circle me-1"></i>
-                                    {{ assignForm.processing ? 'Confirmation...' : 'Confirmer le Rendez-vous' }}
+                                    {{ assignForm.processing ? 'Chargement...' : (appointment.status === 'POSTPONED' ? 'Confirmer la nouvelle date' : 'Confirmer le Rendez-vous') }}
                                 </button>
                             </form>
                         </div>
@@ -127,8 +131,8 @@
                                     <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('CANCELLED')" class="btn btn-outline-danger">
                                         <i class="fa fa-times-circle me-1"></i> Annuler le Rendez-vous
                                     </button>
-                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('POSTPONED')" class="btn btn-outline-warning">
-                                        <i class="fa fa-clock me-1"></i> Reporter le Rendez-vous
+                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('POSTPONED')" class="btn btn-warning text-white">
+                                        <i class="fa fa-calendar-alt me-1"></i> Reprogrammer la date
                                     </button>
                                 </template>
                             </div>
@@ -162,28 +166,7 @@ const props = defineProps({
 });
 
 const filteredDoctors = computed(() => {
-    const appDate = props.appointment.appointment_date;
-    const appTime = props.appointment.appointment_time.substring(0, 5); // HH:MM
-    
-    // Day of week
-    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dateObj = new Date(appDate);
-    const dayKey = daysMap[dateObj.getDay()];
-
-    return props.doctors.filter(d => {
-        // Filter by availability (Planning)
-        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
-            return false;
-        }
-
-        const slots = d.availability[dayKey].slots;
-        if (!slots || slots.length === 0) return false;
-
-        // Check if appointment time falls within any of the doctor's slots
-        return slots.some(slot => {
-            return appTime >= slot.start && appTime <= slot.end;
-        });
-    });
+    return props.doctors || [];
 });
 
 const toast = useToast();
@@ -194,28 +177,82 @@ const assignForm = useForm({
 });
 
 function confirmAppointment() {
-    assignForm.post(route('appointments.confirm', props.appointment.id), {
+    assignForm.post(route('appointments.confirm', props.appointment.uuid), {
         onSuccess: () => {
             toast.success('Rendez-vous confirmé et médecin affecté');
         }
     });
 }
 
-function updateStatus(newStatus) {
-    Swal.fire({
-        title: 'Changer le statut ?',
-        text: `Voulez-vous passer ce rendez-vous au statut : ${newStatus} ?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Oui, changer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            useForm({ status: newStatus }).put(route('appointments.update-status', props.appointment.id), {
-                onSuccess: () => toast.success('Statut mis à jour')
+async function updateStatus(newStatus) {
+    const actions = {
+        'CONFIRMED': 'confirmer',
+        'COMPLETED': 'terminer',
+        'CANCELLED': 'annuler',
+        'POSTPONED': 'reporter',
+        'PENDING': 'remettre en attente'
+    };
+    
+    const actionText = actions[newStatus] || 'modifier';
+
+    if (newStatus === 'POSTPONED') {
+        const { value: formValues } = await Swal.fire({
+            title: 'Reporter le rendez-vous',
+            html:
+                '<div class="mb-3 text-start">' +
+                '<label class="form-label">Nouvelle Date</label>' +
+                '<input id="swal-input1" type="date" class="form-control" value="' + props.appointment.appointment_date + '">' +
+                '</div>' +
+                '<div class="mb-3 text-start">' +
+                '<label class="form-label">Nouvelle Heure</label>' +
+                '<input id="swal-input2" type="time" class="form-control" value="' + props.appointment.appointment_time.substring(0, 5) + '">' +
+                '</div>' +
+                '<div class="mb-3 text-start">' +
+                '<label class="form-label">Note / Motif du report</label>' +
+                '<textarea id="swal-input3" class="form-control" rows="2" placeholder="Ex: Patient indisponible..."></textarea>' +
+                '</div>',
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Confirmer le report',
+            cancelButtonText: 'Annuler',
+            preConfirm: () => {
+                const date = document.getElementById('swal-input1').value;
+                const time = document.getElementById('swal-input2').value;
+                const notes = document.getElementById('swal-input3').value;
+                if (!date || !time) {
+                    Swal.showValidationMessage('La date et l\'heure sont obligatoires');
+                    return false;
+                }
+                return { date, time, notes };
+            }
+        });
+
+        if (formValues) {
+            useForm({ 
+                status: newStatus,
+                appointment_date: formValues.date,
+                appointment_time: formValues.time,
+                notes: formValues.notes
+            }).put(route('appointments.update-status', props.appointment.uuid), {
+                onSuccess: () => toast.success('Rendez-vous reporté avec succès')
             });
         }
-    });
+    } else {
+        Swal.fire({
+            title: 'Confirmer l\'action',
+            text: `Voulez-vous vraiment ${actionText} ce rendez-vous ?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, confirmer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                useForm({ status: newStatus }).put(route('appointments.update-status', props.appointment.uuid), {
+                    onSuccess: () => toast.success('Statut mis à jour')
+                });
+            }
+        });
+    }
 }
 
 function formatDate(date) {

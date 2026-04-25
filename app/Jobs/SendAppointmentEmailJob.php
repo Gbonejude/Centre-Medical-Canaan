@@ -42,7 +42,7 @@ class SendAppointmentEmailJob implements ShouldQueue
                 break;
 
             case 'new_request_staff':
-                $receptionists = \App\Models\User::role(['RECEPTIONIST', 'ADMIN', 'SUPER ADMIN'])->get();
+                $receptionists = \App\Models\User::permission(['RECEPTIONIST', 'ADMIN', 'SUPER ADMIN'])->get();
 
                 foreach ($receptionists as $staff) {
                     \Illuminate\Support\Facades\Mail::to($staff->email)

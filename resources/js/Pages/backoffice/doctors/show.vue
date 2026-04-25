@@ -58,7 +58,7 @@
                                 <span>Détails du Profil Professionnel</span>
                             </div>
                             <div class="card-actions">
-                                <Link :href="route('doctors.edit', doctor.id)" class="btn btn-primary btn-sm">
+                                <Link :href="route('doctors.edit', doctor.uuid)" class="btn btn-primary btn-sm">
                                     <i class="fa fa-edit me-1"></i> Modifier
                                 </Link>
                             </div>
@@ -66,12 +66,12 @@
                         <div class="card-body">
                             <div class="detail-section">
                                 <div class="detail-item">
-                                    <div class="detail-label">Services Médicaux</div>
+                                    <div class="detail-label">Service Médical</div>
                                     <div class="detail-value d-flex flex-wrap gap-1">
-                                        <span v-for="service in doctor.medical_services" :key="service.id" class="badge bg-light text-primary border">
-                                            <i class="fa fa-stethoscope me-1"></i> {{ service.name }}
+                                        <span v-if="doctor.medical_service" class="badge bg-light text-primary border">
+                                            <i class="fa fa-stethoscope me-1"></i> {{ doctor.medical_service.name }}
                                         </span>
-                                        <span v-if="!doctor.medical_services || doctor.medical_services.length === 0" class="text-muted">—</span>
+                                        <span v-else class="text-muted">—</span>
                                     </div>
                                 </div>
                                 <div class="detail-item">
@@ -90,6 +90,14 @@
                                 <div class="detail-item">
                                     <div class="detail-label">Téléphone</div>
                                     <div class="detail-value">{{ doctor.user.phone || 'Non renseigné' }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Genre</div>
+                                    <div class="detail-value">{{ doctor.user.gender === 'male' ? 'Masculin' : (doctor.user.gender === 'female' ? 'Féminin' : 'Non précisé') }}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Date de naissance</div>
+                                    <div class="detail-value">{{ doctor.user.birthday ? formatDate(doctor.user.birthday) : 'Non renseignée' }}</div>
                                 </div>
                                 <div class="detail-item full-width mt-2">
                                     <div class="detail-label">Biographie</div>

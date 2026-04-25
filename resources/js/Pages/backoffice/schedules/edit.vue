@@ -112,7 +112,7 @@ function removeSlot(dayKey, index) {
 }
 
 function saveSchedule() {
-    form.put(route('schedules.update', props.doctor.id), {
+    form.put(route('schedules.update', props.doctor.uuid), {
         onSuccess: () => {
             toast.success('Planning mis à jour avec succès');
         }

@@ -48,8 +48,8 @@ final class AuthGuestController extends Controller
                 'active' => $validated['active'] ?? true,
             ]);
 
-            // Assign the PATIENT role
-            $user->assignRole('PATIENT');
+            // Assign the PATIENT permission
+            $user->givePermissionTo('PATIENT');
 
             // Create the Patient profile record
             Patient::create([
@@ -58,12 +58,11 @@ final class AuthGuestController extends Controller
 
             DB::commit();
 
-            Auth::guard('guest')->login($user);
 
-            Mail::to($user->email)->send(new NewGuestMail($user->firstname, $user->lastname));
+            Mail::to($user->email)->queue(new NewGuestMail($user->firstname, $user->lastname));
 
-            return redirect()->intended(route('home.index'))
-                ->with('success', 'Votre compte a été créé avec succès.');
+            return redirect()->route('auth.guest.login.form')
+                ->with('success', 'Votre compte a été créé avec succès. Veuillez vous connecter.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -108,7 +107,7 @@ final class AuthGuestController extends Controller
         $request->session()->regenerate();
 
         return redirect()
-            ->intended(route('home.index'));
+            ->route('home.index');
     }
 
     /**

@@ -38,7 +38,7 @@
                                 <span>Informations sur le Service</span>
                             </div>
                             <div class="card-actions">
-                                <Link :href="route('medical-services.edit', service.id)" class="btn btn-primary btn-sm">
+                                <Link :href="route('medical-services.edit', service.uuid)" class="btn btn-primary btn-sm">
                                     <i class="fa fa-edit me-1"></i>
                                     Modifier
                                 </Link>

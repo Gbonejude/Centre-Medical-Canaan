@@ -171,7 +171,7 @@
                                                 class="btn btn-sm btn-primary-gradient" title="Affecter un médecin">
                                                 <i class="fa fa-user-plus me-1"></i> Affecter
                                             </button>
-                                            <Link :href="route('appointments.show', app.id)"
+                                            <Link :href="route('appointments.show', app.uuid)"
                                                 class="btn btn-sm btn-outline-info ms-2" title="Voir détails">
                                                 <i class="fa fa-eye"></i>
                                             </Link>
@@ -244,7 +244,7 @@
                                 <img :src="doctor.user?.avatar_url || '/assets/img/user.jpg'" />
                             </div>
                             <div class="doctor-info">
-                                <div class="doctor-name">Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }} ({{ doctor.user?.phone || 'Pas de tél' }})</div>
+                                <div class="doctor-name">Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }}({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})</div>
                                 <div class="doctor-specialty small text-muted">{{ doctor.specialty?.name }}</div>
                             </div>
                             <div class="check-icon" v-if="assignForm.doctor_id === doctor.id">
@@ -377,33 +377,15 @@ function resetFilters() {
 
 // ── Doctors filtered by service and availability ──
 const filteredDoctors = computed(() => {
-    if (!selectedApp.value) return [];
+    if (!selectedApp.value || !props.availableDoctors) return [];
     
-    const appDate = selectedApp.value.appointment_date;
-    const appTime = selectedApp.value.appointment_time.substring(0, 5); // HH:MM
-    
-    // Day of week
-    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dateObj = new Date(appDate);
-    const dayKey = daysMap[dateObj.getDay()];
+    const serviceId = selectedApp.value.medical_service_id;
+    const isOtherService = selectedApp.value.medical_service?.name === 'Autres';
 
+    // On ne garde que les médecins du même service, sauf si c'est "Autres"
     return props.availableDoctors.filter(d => {
-        // Filter by service
-        const hasService = d.medical_service_id === selectedApp.value.medical_service_id;
-        if (!hasService) return false;
-
-        // Filter by availability (Planning)
-        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
-            return false;
-        }
-
-        const slots = d.availability[dayKey].slots;
-        if (!slots || slots.length === 0) return false;
-
-        // Check if appointment time falls within any of the doctor's slots
-        return slots.some(slot => {
-            return appTime >= slot.start && appTime <= slot.end;
-        });
+        if (isOtherService) return true;
+        return d.medical_service_id === serviceId;
     });
 });
 
@@ -419,7 +401,7 @@ function closeModal() {
 }
 
 function submitAssignment() {
-    assignForm.post(route('appointments.assign', selectedApp.value.id), {
+    assignForm.post(route('appointments.assign', selectedApp.value.uuid), {
         onSuccess: () => {
             toast.success('Médecin affecté avec succès');
             closeModal();
