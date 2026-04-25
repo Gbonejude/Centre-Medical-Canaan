@@ -19,7 +19,7 @@ Le statut de votre rendez-vous pour le service **{{ $appointment->medicalService
 *   **Date :** {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d/m/Y') }}
 *   **Heure :** {{ $appointment->appointment_time }}
 @if($appointment->doctor)
-*   **Médecin :** Dr. {{ $appointment->doctor->user->lastname }}
+*   **Médecin :** Dr. {{ $appointment->doctor->lastname }} {{ $appointment->doctor->firstname }}
 @endif
 
 @if($appointment->status === 'CONFIRMED')

@@ -54,8 +54,9 @@ class SendAppointmentEmailJob implements ShouldQueue
 
             case 'assigned_doctor':
                 if ($appointment->doctor) {
+                    \Illuminate\Support\Facades\Mail::to($appointment->doctor->email)
+                        ->send(new \App\Mail\AppointmentAssignedDoctor($appointment));
                     $appointment->doctor->notify(new \App\Notifications\AppointmentAssignedNotification($appointment));
-                    // On pourrait aussi envoyer un mail spécifique au docteur ici si besoin
                 }
                 break;
         }

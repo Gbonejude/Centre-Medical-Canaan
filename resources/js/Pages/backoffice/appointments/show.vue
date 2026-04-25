@@ -151,13 +151,49 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Reporter le Rendez-vous -->
+    <div v-if="showPostponeModal" class="modal-backdrop-custom" @click.self="showPostponeModal = false">
+        <div class="modal-dialog-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title-custom">
+                    <i class="fa fa-calendar-alt me-2 text-warning"></i>
+                    Reprogrammer le rendez-vous
+                </h5>
+                <button type="button" class="btn-close" @click="showPostponeModal = false"></button>
+            </div>
+            <div class="modal-body-custom">
+                <form @submit.prevent="submitPostpone">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nouvelle Date <span class="required">*</span></label>
+                        <DatePickerComponent v-model="postponeForm.appointment_date" minDate="today" placeholder="Choisir une date" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nouvelle Heure <span class="required">*</span></label>
+                        <input type="time" v-model="postponeForm.appointment_time" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Note / Motif du report</label>
+                        <textarea v-model="postponeForm.notes" class="form-control" rows="2" placeholder="Ex: Patient indisponible..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <button type="button" class="btn btn-outline-secondary" @click="showPostponeModal = false">Annuler</button>
+                        <button type="submit" class="btn btn-warning text-white" :disabled="postponeForm.processing">
+                            <i class="fa fa-check me-1"></i> Confirmer le report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
+import DatePickerComponent from '../../components/DateComponent.vue';
 
 const props = defineProps({
     appointment: Object,
@@ -170,6 +206,14 @@ const filteredDoctors = computed(() => {
 });
 
 const toast = useToast();
+
+const showPostponeModal = ref(false);
+const postponeForm = useForm({
+    status: 'POSTPONED',
+    appointment_date: '',
+    appointment_time: '',
+    notes: '',
+});
 
 const assignForm = useForm({
     doctor_id: '',
@@ -184,7 +228,16 @@ function confirmAppointment() {
     });
 }
 
-async function updateStatus(newStatus) {
+function submitPostpone() {
+    postponeForm.put(route('appointments.update-status', props.appointment.uuid), {
+        onSuccess: () => {
+            showPostponeModal.value = false;
+            toast.success('Rendez-vous reporté avec succès');
+        }
+    });
+}
+
+function updateStatus(newStatus) {
     const actions = {
         'CONFIRMED': 'confirmer',
         'COMPLETED': 'terminer',
@@ -196,47 +249,11 @@ async function updateStatus(newStatus) {
     const actionText = actions[newStatus] || 'modifier';
 
     if (newStatus === 'POSTPONED') {
-        const { value: formValues } = await Swal.fire({
-            title: 'Reporter le rendez-vous',
-            html:
-                '<div class="mb-3 text-start">' +
-                '<label class="form-label">Nouvelle Date</label>' +
-                '<input id="swal-input1" type="date" class="form-control" value="' + props.appointment.appointment_date + '">' +
-                '</div>' +
-                '<div class="mb-3 text-start">' +
-                '<label class="form-label">Nouvelle Heure</label>' +
-                '<input id="swal-input2" type="time" class="form-control" value="' + props.appointment.appointment_time.substring(0, 5) + '">' +
-                '</div>' +
-                '<div class="mb-3 text-start">' +
-                '<label class="form-label">Note / Motif du report</label>' +
-                '<textarea id="swal-input3" class="form-control" rows="2" placeholder="Ex: Patient indisponible..."></textarea>' +
-                '</div>',
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'Confirmer le report',
-            cancelButtonText: 'Annuler',
-            preConfirm: () => {
-                const date = document.getElementById('swal-input1').value;
-                const time = document.getElementById('swal-input2').value;
-                const notes = document.getElementById('swal-input3').value;
-                if (!date || !time) {
-                    Swal.showValidationMessage('La date et l\'heure sont obligatoires');
-                    return false;
-                }
-                return { date, time, notes };
-            }
-        });
-
-        if (formValues) {
-            useForm({ 
-                status: newStatus,
-                appointment_date: formValues.date,
-                appointment_time: formValues.time,
-                notes: formValues.notes
-            }).put(route('appointments.update-status', props.appointment.uuid), {
-                onSuccess: () => toast.success('Rendez-vous reporté avec succès')
-            });
-        }
+        postponeForm.appointment_date = props.appointment.appointment_date?.substring(0, 10) ?? '';
+        postponeForm.appointment_time = props.appointment.appointment_time?.substring(0, 5) ?? '';
+        postponeForm.notes = '';
+        showPostponeModal.value = true;
+        return;
     } else {
         Swal.fire({
             title: 'Confirmer l\'action',
@@ -312,4 +329,19 @@ $border-radius: 0.475rem;
 .form-label { font-weight: 500; }
 .form-control { border-radius: 8px; border: 1px solid $border-color; padding: 0.6rem 1rem; }
 .required { color: $danger-color; }
+
+.modal-backdrop-custom {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1050;
+}
+.modal-dialog-custom {
+    background: #fff; border-radius: 12px; width: 100%; max-width: 480px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.18); overflow: hidden;
+}
+.modal-header-custom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid $border-color;
+    .modal-title-custom { font-weight: 600; font-size: 1.05rem; margin: 0; }
+}
+.modal-body-custom { padding: 1.5rem; }
 </style>
