@@ -110,6 +110,19 @@ class AppointmentController extends Controller implements HasMiddleware
         ]);
 
         $doctor = Doctor::with('user')->findOrFail($validated['doctor_id']);
+        
+        // Vérifier si le docteur est déjà occupé à cette heure
+        $isBusy = Appointment::where('doctor_id', $doctor->user_id)
+            ->where('appointment_date', $appointment->appointment_date)
+            ->where('appointment_time', $appointment->appointment_time)
+            ->whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->where('id', '!=', $appointment->id)
+            ->exists();
+
+        if ($isBusy) {
+            return back()->with('error', "Le Dr. {$doctor->user->lastname} a déjà un rendez-vous programmé à cette date et heure.");
+        }
+
         $notes = $validated['notes'] ?? $validated['receptionist_notes'] ?? null;
 
         $appointment->update([
@@ -131,15 +144,27 @@ class AppointmentController extends Controller implements HasMiddleware
         $isDoctor = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         $appointment->load(['patient', 'doctor', 'medicalService']);
+
+        // Récupérer les IDs des médecins qui ont déjà un rendez-vous à cette heure précise
+        $busyDoctorIds = Appointment::where('appointment_date', $appointment->appointment_date)
+            ->where('appointment_time', $appointment->appointment_time)
+            ->whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->where('id', '!=', $appointment->id)
+            ->pluck('doctor_id')
+            ->toArray();
+
+        $doctors = Doctor::with(['user', 'specialty', 'medicalService'])
+            ->where('is_available', true)
+            ->when($appointment->medicalService->name !== 'Autres', function($q) use ($appointment) {
+                return $q->where('medical_service_id', $appointment->medical_service_id);
+            })
+            ->get();
+
         return Inertia::render('backoffice/appointments/show', [
             'appointment' => $appointment,
             'isDoctor' => $isDoctor,
-            'doctors' => Doctor::with(['user', 'specialty', 'medicalService'])
-                ->where('is_available', true)
-                ->when($appointment->medicalService->name !== 'Autres', function($q) use ($appointment) {
-                    return $q->where('medical_service_id', $appointment->medical_service_id);
-                })
-                ->get(),
+            'doctors' => $doctors,
+            'busyDoctorIds' => $busyDoctorIds, // On passe les IDs pour gérer l'affichage "Indisponible"
         ]);
     }
 

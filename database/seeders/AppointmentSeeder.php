@@ -25,7 +25,7 @@ class AppointmentSeeder extends Seeder
         $doctors = Doctor::all();
         $patients = Patient::all();
 
-        foreach (range(1, 10) as $index) {
+        foreach (range(1, 150) as $index) {
             $doctor = $doctors->random();
             $patient = $patients->random();
             

@@ -76,7 +76,17 @@
                         </Link>
                     </li>
 
-                    <!-- Planning des Médecins (Admin & Réceptionniste) -->
+                    <!-- Planning Global (Admin & Réceptionniste) -->
+                    <li
+                        v-if="userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
+                        :class="{ active: isActiveLink('/planning') }"
+                    >
+                        <Link :href="route('planning.index')" @click="closeSidebarOnMobile">
+                            <i class="fa fa-calendar-alt"></i><span>Planning</span>
+                        </Link>
+                    </li>
+
+                    <!-- Disponibilités des Médecins (Admin & Réceptionniste) -->
                     <li
                         v-if="userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
                         :class="{ active: isActiveLink('/availabilities') }"

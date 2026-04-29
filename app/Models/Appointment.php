@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AppointmentStatus;
 use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,7 @@ class Appointment extends Model
     protected $casts = [
         'appointment_date' => 'date',
         'confirmed_at' => 'datetime',
+        'status' => AppointmentStatus::class,
     ];
 
     protected static function boot()
@@ -71,5 +73,10 @@ class Appointment extends Model
       public function service()
     {
         return $this->medicalService();
+    }
+
+    public function getStatusLabelAttribute()
+    {
+        return $this->status instanceof AppointmentStatus ? $this->status->label() : $this->status;
     }
 }

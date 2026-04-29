@@ -88,8 +88,10 @@
                                     <div class="input-wrapper">
                                         <select class="form-control" v-model="assignForm.doctor_id" required :disabled="filteredDoctors.length === 0">
                                             <option value="" disabled>{{ filteredDoctors.length === 0 ? 'Aucun médecin pour ce service' : 'Sélectionner un docteur' }}</option>
-                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.id">
-                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} ({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})
+                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.id" :disabled="busyDoctorIds.includes(doctor.user_id)">
+                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} 
+                                                ({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})
+                                                {{ busyDoctorIds.includes(doctor.user_id) ? ' - (Indisponible)' : '' }}
                                             </option>
                                         </select>
                                         <div v-if="filteredDoctors.length === 0" class="alert alert-warning mt-2 py-2 small">
@@ -199,6 +201,7 @@ const props = defineProps({
     appointment: Object,
     isDoctor: Boolean,
     doctors: Array,
+    busyDoctorIds: Array,
 });
 
 const filteredDoctors = computed(() => {

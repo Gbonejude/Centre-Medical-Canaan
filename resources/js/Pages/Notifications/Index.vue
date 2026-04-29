@@ -1,6 +1,6 @@
 <template>
     <Head>
-        <title>Notifications | CCS</title>
+        <title>Notifications | CMC</title>
         <meta name="description" content="Voir toutes vos notifications" />
     </Head>
 
@@ -71,7 +71,7 @@
                                         </button>
                                     </div>
                                     <button @click="deleteNotification(notification.id)" 
-                                        class="btn-delete-ghost" title="Remove notification">
+                                        class="btn-delete-ghost" title="Supprimer la notification">
                                         <i class="far fa-trash-alt"></i>
                                     </button>
                                 </div>

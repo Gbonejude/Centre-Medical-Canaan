@@ -1,13 +1,13 @@
 <template>
     <Head>
-        <title>Forgot Password</title>
+        <title>Mot de passe oublié</title>
     </Head>
     <section class="login-section">
         <div class="login-box">
             <h1>Centre Médical Canaan</h1>
-            <h5 class="mb-3 text-center text-muted">Reset Your Password</h5>
+            <h5 class="mb-3 text-center text-muted">Réinitialiser votre mot de passe</h5>
             <p class="text-center text-muted mb-4">
-                Enter your email address and we'll send you a link to reset your password.
+                Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.
             </p>
 
             <div v-if="$page.props.flash?.success" class="alert alert-success mb-3" role="alert">
@@ -20,12 +20,12 @@
 
             <form @submit.prevent="sendResetLink">
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email Address</label>
+                    <label for="email" class="form-label">Adresse E-mail</label>
                     <input
                         type="email"
                         class="form-control"
                         id="email"
-                        placeholder="Enter your email address"
+                        placeholder="Entrez votre adresse e-mail"
                         v-model="forgotForm.email"
                         :disabled="forgotForm.processing"
                         autofocus
@@ -35,19 +35,19 @@
                 <button type="submit" class="btn btn-green w-100 mb-3" :disabled="forgotForm.processing">
                     <span v-if="forgotForm.processing" class="loader-content">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                            <span class="visually-hidden">Chargement...</span>
                         </div>
-                        Sending...
+                        Envoi en cours...
                     </span>
                     <span v-else class="normal-content">
                         <i class="fas fa-paper-plane me-2"></i>
-                        Send Reset Link
+                        Envoyer le lien de réinitialisation
                     </span>
                 </button>
 
                 <div class="text-center">
                     <Link :href="route('auth.loginForm')" class="back-to-login">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Login
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la connexion
                     </Link>
                 </div>
             </form>

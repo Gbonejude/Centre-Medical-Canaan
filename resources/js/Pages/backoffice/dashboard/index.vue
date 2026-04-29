@@ -87,7 +87,7 @@
                             <div class="doctor-name">{{ app.doctor }} • {{ app.service }}</div>
                         </div>
                         <div class="app-status">
-                            <span :class="'status-badge ' + app.status.toLowerCase()">
+                            <span :class="'status-badge ' + app.status_key">
                                 {{ app.status }}
                             </span>
                         </div>

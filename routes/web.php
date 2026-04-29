@@ -125,5 +125,7 @@ Route::group(['domain' => 'admin.'.$domain], function () {
         Route::get('availabilities', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
         Route::get('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
         Route::put('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');
+
+        Route::get('planning', [\App\Http\Controllers\BackOffice\Hospital\PlanningController::class, 'index'])->name('planning.index');
     });
 });

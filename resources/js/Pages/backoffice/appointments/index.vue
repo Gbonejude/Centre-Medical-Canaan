@@ -238,14 +238,23 @@
                     <div class="doctor-list">
                         <div v-for="doctor in filteredDoctors" :key="doctor.id"
                             class="doctor-option"
-                            :class="{ selected: assignForm.doctor_id === doctor.id }"
-                            @click="assignForm.doctor_id = doctor.id">
+                            :class="{ 
+                                selected: assignForm.doctor_id === doctor.id,
+                                disabled: isDoctorBusy(doctor)
+                            }"
+                            @click="!isDoctorBusy(doctor) ? assignForm.doctor_id = doctor.id : null">
                             <div class="doctor-avatar">
                                 <img :src="doctor.user?.avatar_url || '/assets/img/user.jpg'" />
                             </div>
                             <div class="doctor-info">
-                                <div class="doctor-name">Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }}({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})</div>
-                                <div class="doctor-specialty small text-muted">{{ doctor.specialty?.name }}</div>
+                                <div class="doctor-name">
+                                    Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }}
+                                    <span v-if="isDoctorBusy(doctor)" class="badge bg-danger ms-2 small" style="font-size: 0.65rem;">Indisponible</span>
+                                </div>
+                                <div class="doctor-specialty small text-muted">
+                                    {{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }} 
+                                    <span v-if="doctor.specialty?.name">· {{ doctor.specialty?.name }}</span>
+                                </div>
                             </div>
                             <div class="check-icon" v-if="assignForm.doctor_id === doctor.id">
                                 <i class="fa fa-check-circle"></i>
@@ -382,12 +391,24 @@ const filteredDoctors = computed(() => {
     const serviceId = selectedApp.value.medical_service_id;
     const isOtherService = selectedApp.value.medical_service?.name === 'Autres';
 
-    // On ne garde que les médecins du même service, sauf si c'est "Autres"
+    // On garde tous les médecins du service pour pouvoir afficher "Indisponible"
     return props.availableDoctors.filter(d => {
         if (isOtherService) return true;
         return d.medical_service_id === serviceId;
     });
 });
+
+function isDoctorBusy(doctor) {
+    if (!selectedApp.value) return false;
+    
+    return props.appointments.some(a => 
+        a.doctor_id === doctor.user_id && 
+        a.appointment_date === selectedApp.value.appointment_date && 
+        a.appointment_time === selectedApp.value.appointment_time &&
+        ['PENDING', 'CONFIRMED'].includes(a.status) &&
+        a.id !== selectedApp.value.id
+    );
+}
 
 function openAssignModal(app) {
     selectedApp.value = app;
@@ -557,8 +578,14 @@ $border-radius: 0.75rem;
     .doctor-option {
         display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid #f1f1f1; cursor: pointer; transition: all 0.2s;
         &:last-child { border-bottom: none; }
-        &:hover { background: #f8f9ff; }
+        &:hover:not(.disabled) { background: #f8f9ff; }
         &.selected { background: rgba($primary-color, 0.05); border-left: 4px solid $primary-color; }
+        &.disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            background: #fdfdfd;
+            &:hover { background: #fdfdfd; }
+        }
         .doctor-avatar { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; margin-right: 0.75rem; img { width: 100%; height: 100%; object-fit: cover; } }
         .doctor-name { font-weight: 600; color: #181c32; }
         .check-icon { margin-left: auto; color: $primary-color; font-size: 1.2rem; }

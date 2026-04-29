@@ -1,145 +1,147 @@
 <template>
-  <Head>
-    <title>My Profile</title>
-  </Head>
-  <div class="content container-fluid">
-    
-    <div class="page-header">
-      <div class="row align-items-center">
-        <div class="col">
-          <h3 class="page-title">My Profile</h3>
-          <ul class="breadcrumb">
-            <li class="breadcrumb-item">
-              <Link :href="route('dashboard.index')">Dashboard</Link>
-            </li>
-            <li class="breadcrumb-item active">Profile</li>
-          </ul>
-        </div>
-        <div class="col-auto float-end ms-auto">
-          <Link :href="route('profile.edit')" class="btn btn-primary">
-            <i class="fa fa-edit me-1"></i> Edit Profile
-          </Link>
+  <div class="profile-wrapper">
+    <Head>
+      <title>Mon Profil</title>
+    </Head>
+    <div class="content container-fluid">
+      
+      <div class="page-header">
+        <div class="row align-items-center">
+          <div class="col">
+            <h3 class="page-title">Mon Profil</h3>
+            <ul class="breadcrumb">
+              <li class="breadcrumb-item">
+                <Link :href="route('dashboard.index')">Tableau de bord</Link>
+              </li>
+              <li class="breadcrumb-item active">Profil</li>
+            </ul>
+          </div>
+          <div class="col-auto float-end ms-auto">
+            <Link :href="route('profile.edit')" class="btn btn-primary">
+              <i class="fa fa-edit me-1"></i> Modifier le profil
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
 
-    
-    <div class="row">
-      <div class="col-md-4">
-        <div class="card profile-card">
-          <div class="card-body">
-            <div class="profile-image-container">
-              <div class="profile-image">
-                
-                <img
-                    v-if="userAvatar"
-                    :src="userAvatar"
-                    :alt="`${user.firstname} ${user.lastname}`"
-                    class="profile-avatar-image"
-                    @error="handleAvatarError"
-                />
-                <span
-                    v-else
-                    class="avatar-text">
-                    {{ getInitials(user.firstname + ' ' + user.lastname) }}
-                </span>
+      
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card profile-card">
+            <div class="card-body">
+              <div class="profile-image-container">
+                <div class="profile-image">
+                  
+                  <img
+                      v-if="userAvatar"
+                      :src="userAvatar"
+                      :alt="`${user.firstname} ${user.lastname}`"
+                      class="profile-avatar-image"
+                      @error="handleAvatarError"
+                  />
+                  <span
+                      v-else
+                      class="avatar-text">
+                      {{ getInitials(user.firstname + ' ' + user.lastname) }}
+                  </span>
+                </div>
+              </div>
+              <div class="profile-info text-center">
+                <h4 class="user-name">{{ user.firstname }} {{ user.lastname }}</h4>
+                <p class="user-role">{{ getRoleLabel() }}</p>
               </div>
             </div>
-            <div class="profile-info text-center">
-              <h4 class="user-name">{{ user.firstname }} {{ user.lastname }}</h4>
-              <p class="user-role">{{ getRoleLabel() }}</p>
-            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-md-8">
-        <div class="card">
-          <div class="card-header">
-            <h5 class="card-title">Personal Information</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-user text-primary"></i>
-                    <span>Username</span>
-                  </div>
-                  <div class="info-value">{{ user.username }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-envelope text-primary"></i>
-                    <span>Email</span>
-                  </div>
-                  <div class="info-value">{{ user.email }}</div>
-                </div>
-
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-phone text-primary"></i>
-                    <span>Phone</span>
-                  </div>
-                  <div class="info-value">{{ user.phone || 'Not provided' }}</div>
-                </div>
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="card-title">Informations Personnelles</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
                   <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-key text-primary"></i>
-                    <span>Password</span>
+                    <div class="info-label">
+                      <i class="fa fa-user text-primary"></i>
+                      <span>Nom d'utilisateur</span>
+                    </div>
+                    <div class="info-value">{{ user.username }}</div>
                   </div>
-                  <div class="info-value">
-                    <Link :href="route('profile.edit')" class="text-primary small">
-                      Change Password
-                    </Link>
+
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-envelope text-primary"></i>
+                      <span>Email</span>
+                    </div>
+                    <div class="info-value">{{ user.email }}</div>
+                  </div>
+
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-phone text-primary"></i>
+                      <span>Téléphone</span>
+                    </div>
+                    <div class="info-value">{{ user.phone || 'Non fourni' }}</div>
+                  </div>
+                  
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-key text-primary"></i>
+                      <span>Mot de passe</span>
+                    </div>
+                    <div class="info-value">
+                      <Link :href="route('profile.edit')" class="text-primary small">
+                        Changer le mot de passe
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="col-md-6">
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-venus-mars text-primary"></i>
-                    <span>Gender</span>
+                <div class="col-md-6">
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-venus-mars text-primary"></i>
+                      <span>Sexe</span>
+                    </div>
+                    <div class="info-value">{{ formatGender(user.gender) }}</div>
                   </div>
-                  <div class="info-value">{{ formatGender(user.gender) }}</div>
-                </div>
 
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-birthday-cake text-primary"></i>
-                    <span>Birthday</span>
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-birthday-cake text-primary"></i>
+                      <span>Date de naissance</span>
+                    </div>
+                    <div class="info-value">{{ formatDate(user.birthday) || 'Non fourni' }}</div>
                   </div>
-                  <div class="info-value">{{ formatDate(user.birthday) || 'Not provided' }}</div>
-                </div>
 
-                <div class="info-item">
-                  <div class="info-label">
-                    <i class="fa fa-calendar text-primary"></i>
-                    <span>Joined Date</span>
+                  <div class="info-item">
+                    <div class="info-label">
+                      <i class="fa fa-calendar text-primary"></i>
+                      <span>Date d'inscription</span>
+                    </div>
+                    <div class="info-value">{{ formatDate(user.created_at) }}</div>
                   </div>
-                  <div class="info-value">{{ formatDate(user.created_at) }}</div>
                 </div>
-
               </div>
             </div>
           </div>
-        </div>
 
-        
-        <div class="card mt-4">
-          <div class="card-header">
-            <h5 class="card-title">Permissions & Access</h5>
-          </div>
-          <div class="card-body">
-            <div class="permissions-container">
-              <div v-for="permission in user.permissions" :key="permission.id" class="permission-badge">
-                {{ permission.name }}
-              </div>
+          
+          <div class="card mt-4">
+            <div class="card-header">
+              <h5 class="card-title">Permissions & Accès</h5>
+            </div>
+            <div class="card-body">
+              <div class="permissions-container">
+                <div v-for="permission in user.permissions" :key="permission.id" class="permission-badge">
+                  {{ permission.name }}
+                </div>
 
-              <div v-if="!user.permissions || user.permissions.length === 0" class="text-muted">
-                No specific permissions assigned.
+                <div v-if="!user.permissions || user.permissions.length === 0" class="text-muted">
+                  Aucune permission spécifique assignée.
+                </div>
               </div>
             </div>
           </div>
@@ -150,7 +152,7 @@
 </template>
 
 <script setup>
-import { Link } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
 import { ref, computed } from 'vue';
 
 const props = defineProps({
@@ -185,15 +187,21 @@ function getInitials(name) {
 }
 
 function formatGender(gender) {
-  if (!gender) return 'Not specified';
+  if (!gender) return 'Non spécifié';
 
-  return gender.charAt(0).toUpperCase() + gender.slice(1);
+  const genders = {
+    'male': 'Homme',
+    'female': 'Femme',
+    'other': 'Autre'
+  };
+
+  return genders[gender.toLowerCase()] || gender;
 }
 
 function formatDate(dateString) {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('fr-FR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -201,16 +209,16 @@ function formatDate(dateString) {
 }
 
 function getRoleLabel() {
-  if (props.user.permissions.some(p => p.name === 'ADMI')) {
-    return 'Administrator';
-  } else if (props.user.permissions.some(p => p.name === 'OFFICE')) {
-    return 'Office Staff';
-  } else if (props.user.permissions.some(p => p.name.includes('DSP'))) {
-    return 'Direct Support Professional';
-  } else if (props.user.permissions.some(p => p.name === 'CAREGIVER')) {
-    return 'Caregiver';
+  if (props.user.permissions.some(p => p.name === 'ADMIN' || p.name === 'SUPER ADMIN')) {
+    return 'Administrateur';
+  } else if (props.user.permissions.some(p => p.name === 'RECEPTIONIST')) {
+    return 'Réceptionniste';
+  } else if (props.user.permissions.some(p => p.name === 'DOCTOR')) {
+    return 'Médecin';
+  } else if (props.user.permissions.some(p => p.name === 'PATIENT')) {
+    return 'Patient';
   } else {
-    return 'User';
+    return 'Utilisateur';
   }
 }
 </script>

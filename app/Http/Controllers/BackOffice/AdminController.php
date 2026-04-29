@@ -48,7 +48,8 @@ class AdminController extends Controller
                     : 'Non assigné',
                 'service'          => $a->medicalService?->name ?? 'N/A',
                 'appointment_time' => $a->appointment_time,
-                'status'           => $a->status,
+                'status_key'       => strtolower($a->status->value),
+                'status'           => $a->status_label,
             ]);
 
         // ── Permissions pour le filtre utilisateurs ──
