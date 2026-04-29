@@ -54,11 +54,11 @@ class DoctorScheduleController extends Controller implements HasMiddleware
 
         // Initialiser l'availability si vide
         $defaultAvailability = [
-            'monday'    => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
-            'tuesday'   => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
-            'wednesday' => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
-            'thursday'  => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
-            'friday'    => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
+            'monday'    => ['enabled' => true, 'slots' => [['start' => '07:00', 'end' => '17:00']]],
+            'tuesday'   => ['enabled' => true, 'slots' => [['start' => '07:00', 'end' => '17:00']]],
+            'wednesday' => ['enabled' => true, 'slots' => [['start' => '07:00', 'end' => '17:00']]],
+            'thursday'  => ['enabled' => true, 'slots' => [['start' => '07:00', 'end' => '17:00']]],
+            'friday'    => ['enabled' => true, 'slots' => [['start' => '07:00', 'end' => '17:00']]],
             'saturday'  => ['enabled' => false, 'slots' => []],
             'sunday'    => ['enabled' => false, 'slots' => []],
         ];

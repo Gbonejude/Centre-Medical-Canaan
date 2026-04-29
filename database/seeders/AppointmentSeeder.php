@@ -36,7 +36,7 @@ class AppointmentSeeder extends Seeder
                 'doctor_id' => $doctor->user_id,
                 'medical_service_id' => $doctor->medical_service_id,
                 'appointment_date' => now()->addDays(rand(-15, 30))->format('Y-m-d'),
-                'appointment_time' => sprintf('%02d:%02d', rand(8, 17), rand(0, 1) === 0 ? '00' : '30'),
+                'appointment_time' => sprintf('%02d:%02d', rand(7, 22), rand(0, 1) === 0 ? '00' : '30'),
                 'status' => $statuses[array_rand($statuses)],
                 'reason' => $motifs[array_rand($motifs)],
             ]);

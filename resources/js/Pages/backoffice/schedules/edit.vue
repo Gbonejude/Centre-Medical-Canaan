@@ -104,7 +104,7 @@ const form = useForm({
 });
 
 function addSlot(dayKey) {
-    form.availability[dayKey].slots.push({ start: '08:00', end: '12:00' });
+    form.availability[dayKey].slots.push({ start: '07:00', end: '17:00' });
 }
 
 function removeSlot(dayKey, index) {
