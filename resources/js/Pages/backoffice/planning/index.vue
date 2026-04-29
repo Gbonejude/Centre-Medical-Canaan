@@ -22,7 +22,7 @@
                         </button>
                         
                         <div class="week-info d-flex align-items-center px-3">
-                            <span class="fw-bold text-dark week-display me-2">{{ currentWeek.display }}</span>
+                            <span class="fw-bold text-dark week-display me-2">{{ weekDisplay }}</span>
                             <div class="date-picker-jump">
                                 <label for="jump-date" class="cursor-pointer mb-0" title="Choisir une date spécifique">
                                     <i class="fas fa-calendar-alt text-primary"></i>
@@ -32,7 +32,7 @@
                                     v-model="filters.date" 
                                     :enableTime="false" 
                                     class="hidden-picker"
-                                    @update:modelValue="submitSearch"
+                                    @update:modelValue="onDatePickerChange"
                                 />
                             </div>
                         </div>
@@ -52,24 +52,15 @@
                         <div class="col-md-4">
                             <div class="search-box">
                                 <i class="fas fa-search search-icon"></i>
-                                <input type="text" v-model="filters.search" placeholder="Rechercher un médecin..." class="form-control ps-5 rounded-pill border-light bg-light" @input="debouncedSearch" />
+                                <input type="text" v-model="filters.search" placeholder="Rechercher un médecin..." class="form-control ps-5 rounded-pill border-light bg-light" />
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <select v-model="filters.service_id" class="form-select rounded-pill border-light bg-light" @change="submitSearch">
+                            <select v-model="filters.service_id" class="form-select rounded-pill border-light bg-light">
                                 <option value="">Tous les services</option>
                                 <option v-for="service in services" :key="service.id" :value="service.id">
                                     {{ service.name }}
                                 </option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select v-model="filters.per_page" class="form-select rounded-pill border-light bg-light" @change="submitSearch">
-                                <option value="10">10 par page</option>
-                                <option value="20">20 par page</option>
-                                <option value="50">50 par page</option>
-                                <option value="100">100 par page</option>
-                                <option value="all">Tout afficher</option>
                             </select>
                         </div>
                     </div>
@@ -79,7 +70,25 @@
             <!-- Planning Grid -->
             <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                 <div class="planning-table-container">
-                    <table class="table planning-table mb-0">
+                    <!-- Si le planning complet de la semaine est vide -->
+                    <div v-if="isGlobalPlanningEmpty" class="no-planning-state py-5 text-center bg-white rounded-4 shadow-sm border">
+                        <div class="empty-icon-wrapper mb-3">
+                            <i class="fas fa-calendar-times fa-4x text-light-red"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">Pas de planning</h4>
+                        <p class="text-muted mx-auto" style="max-width: 400px;">
+                            Aucun médecin n'a de disponibilité ou de rendez-vous prévu pour cette période ({{ weekDisplay }}).
+                        </p>
+                        <button v-if="filters.search || filters.service_id" @click="clearFilters" class="btn btn-outline-primary rounded-pill mt-3">
+                            Effacer les filtres
+                        </button>
+                        <button v-else @click="changeWeek(1)" class="btn btn-outline-secondary rounded-pill mt-3 ms-2">
+                            Semaine suivante <i class="fas fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+
+                    <!-- Sinon, afficher le tableau -->
+                    <table v-else class="table planning-table mb-0">
                         <thead>
                             <tr>
                                 <th class="sticky-col first-col">Médecin</th>
@@ -90,7 +99,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="doctor in doctors.data" :key="doctor.id">
+                            <tr v-for="doctor in filteredDoctors" :key="doctor.id">
                                 <td class="sticky-col first-col">
                                     <div class="doctor-info-cell d-flex align-items-center gap-3">
                                         <div class="avatar-wrapper">
@@ -111,7 +120,9 @@
                                         </div>
                                     </div>
                                     <div v-else class="closed-indicator">
-                                        <span class="badge bg-light text-muted fw-normal">Indisponible</span>
+                                        <span class="unavailable-badge">
+                                            <i class="fas fa-ban me-1"></i> Indisponible
+                                        </span>
                                     </div>
 
                                     <!-- Rendez-vous (Foreground) -->
@@ -130,25 +141,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- Pagination -->
-            <div class="pagination-container d-flex justify-content-between align-items-center mt-4 px-2" v-if="doctors.links && doctors.links.length > 3">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination mb-0">
-                        <li v-for="(link, index) in doctors.links" :key="index" class="page-item"
-                            :class="{ 'active': link.active, 'disabled': !link.url }">
-                            <button class="page-link" 
-                                    @click="link.url ? router.get(link.url, filters, { preserveState: true }) : null" 
-                                    v-html="link.label"
-                                    :disabled="!link.url">
-                            </button>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="pagination-info">
-                    Affichage de <span class="fw-medium">{{ doctors.from }}</span> à <span class="fw-medium">{{ doctors.to }}</span> sur <span class="fw-medium">{{ doctors.total }}</span> entrées
-                </div>
-            </div>
         </div>
     </div>
 </template>
@@ -156,36 +148,50 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import debounce from 'lodash/debounce';
 import DatePicker from '../../components/DatePicker.vue';
 
 const props = defineProps({
-    doctors: Object, // Changé de Array à Object pour la pagination
+    doctors: Array,
     appointments: Object, // Groupé par [doctor_id][date]
     services: Array,
-    currentWeek: Object,
-    filters: Object,
     isDoctor: Boolean,
+    initialDate: String,
 });
+
+// Date pivot pour la semaine affichée (côté front)
+const selectedDate = ref(parseISO(props.initialDate));
 
 const filters = ref({
-    search: props.filters.search || '',
-    service_id: props.filters.service_id || '',
-    date: props.filters.date || props.currentWeek.start,
-    per_page: props.filters.per_page || '10',
+    search: '',
+    service_id: '',
+    date: props.initialDate,
 });
 
-// Calcul des jours de la semaine
+// Calcul de la semaine courante côté front
+const currentWeekStart = computed(() => startOfWeek(selectedDate.value, { weekStartsOn: 1 }));
+const currentWeekEnd = computed(() => endOfWeek(selectedDate.value, { weekStartsOn: 1 }));
+
+const weekDisplay = computed(() => {
+    const start = currentWeekStart.value;
+    const end = currentWeekEnd.value;
+    
+    if (start.getMonth() === end.getMonth()) {
+        return `Du ${format(start, 'd')} au ${format(end, 'd MMMM yyyy', { locale: fr })}`;
+    } else if (start.getFullYear() === end.getFullYear()) {
+        return `Du ${format(start, 'd MMMM')} au ${format(end, 'd MMMM yyyy', { locale: fr })}`;
+    }
+    return `Du ${format(start, 'd MMMM yyyy')} au ${format(end, 'd MMMM yyyy', { locale: fr })}`;
+});
+
 const weekDays = computed(() => {
-    const start = parseISO(props.currentWeek.start);
     const days = [];
     const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const dayLabels = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
     for (let i = 0; i < 7; i++) {
-        const d = addDays(start, i);
+        const d = addDays(currentWeekStart.value, i);
         days.push({
             key: dayNames[i],
             name: dayLabels[i],
@@ -195,7 +201,35 @@ const weekDays = computed(() => {
     return days;
 });
 
-const isToday = (dateStr) => isSameDay(parseISO(dateStr), new Date());
+// Filtrage des médecins (Nom + Service)
+const filteredDoctors = computed(() => {
+    return props.doctors.filter(doctor => {
+        const fullName = `${doctor.user.firstname} ${doctor.user.lastname}`.toLowerCase();
+        const matchesSearch = !filters.value.search || fullName.includes(filters.value.search.toLowerCase());
+        const matchesService = !filters.value.service_id || doctor.medical_service_id == filters.value.service_id;
+        return matchesSearch && matchesService;
+    });
+});
+
+// Vérifier si TOUT le planning de la semaine est vide (Indisponible partout + Aucun RDV)
+const isGlobalPlanningEmpty = computed(() => {
+    if (filteredDoctors.value.length === 0) return true;
+
+    // On cherche s'il y a AU MOINS un créneau dispo ou AU MOINS un RDV dans la semaine
+    return !filteredDoctors.value.some(doctor => {
+        // 1. Vérifier les disponibilités dans weekDays
+        const hasAvailability = weekDays.value.some(day => isDoctorAvailable(doctor, day.key));
+        if (hasAvailability) return true;
+
+        // 2. Vérifier les rendez-vous dans weekDays
+        const hasAppointments = weekDays.value.some(day => getAppointments(doctor, day.date).length > 0);
+        if (hasAppointments) return true;
+
+        return false;
+    });
+});
+
+const isToday = (dateStr) => isSameDay(parseISO(dateStr), startOfDay(new Date()));
 
 const formatDateShort = (dateStr) => format(parseISO(dateStr), 'dd MMM', { locale: fr });
 
@@ -222,24 +256,24 @@ const viewAppointment = (uuid) => {
 };
 
 const changeWeek = (offset) => {
-    const newDate = addDays(parseISO(props.currentWeek.start), offset * 7);
-    filters.value.date = format(newDate, 'yyyy-MM-dd');
-    submitSearch();
+    selectedDate.value = addDays(selectedDate.value, offset * 7);
 };
 
 const resetWeek = () => {
-    filters.value.date = format(new Date(), 'yyyy-MM-dd');
-    submitSearch();
+    selectedDate.value = new Date();
+    filters.value.date = format(selectedDate.value, 'yyyy-MM-dd');
 };
 
-const submitSearch = () => {
-    router.get(route('planning.index'), filters.value, {
-        preserveState: true,
-        preserveScroll: true,
-    });
+const onDatePickerChange = (val) => {
+    if (val) {
+        selectedDate.value = parseISO(val);
+    }
 };
 
-const debouncedSearch = debounce(submitSearch, 500);
+const clearFilters = () => {
+    filters.value.search = '';
+    filters.value.service_id = '';
+};
 </script>
 
 <style lang="scss" scoped>
@@ -249,7 +283,6 @@ $warning-color: #ff9f43;
 $danger-color: #f64e60;
 $border-color: #f1f3f9;
 $bg-light: #f8fafc;
-
 $body-color: #f9fafb;
 
 .content-wrapper {
@@ -299,8 +332,8 @@ $body-color: #f9fafb;
         background-color: rgba($primary-color, 0.03);
         .day-name { color: $primary-color; }
     }
-    .day-name { font-weight: 700; font-size: 1rem; position: relative; z-index: 1; }
-    .day-date { font-size: 0.8rem; color: #a1a5b7; position: relative; z-index: 1; }
+    .day-name { font-weight: 700; font-size: 1rem; }
+    .day-date { font-size: 0.8rem; color: #a1a5b7; }
 }
 
 .doctor-info-cell {
@@ -308,11 +341,22 @@ $body-color: #f9fafb;
     .name { color: #181c32; }
 }
 
+.unavailable-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background-color: #fff1f1;
+    color: #ff6b6b;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
 .day-cell {
     height: 100%;
     vertical-align: top;
     background-color: #fff;
-    padding-top: 1.5rem !important; /* Ajout d'un espace pour éviter le chevauchement avec le header */
+    padding-top: 1.5rem !important;
     &.is-today { background-color: rgba($primary-color, 0.01); }
 }
 
@@ -350,26 +394,19 @@ $body-color: #f9fafb;
     &.completed { border-left-color: #7e8299; background-color: #fcfcfd; }
 }
 
-.pagination-container {
-    .pagination {
-        gap: 0;
-        .page-item {
-            .page-link {
-                border: 1px solid $border-color;
-                color: #5e6278;
-                padding: 0.5rem 0.85rem;
-                font-size: 0.85rem;
-                font-weight: 500;
-                transition: all 0.2s ease;
-                &:hover:not(.disabled) { background-color: #f1f3f9; color: $primary-color; }
-            }
-            &.active .page-link { background-color: $primary-color; border-color: $primary-color; color: white; }
-            &.disabled .page-link { color: #b5b5c3; background-color: #f9fafb; cursor: not-allowed; }
-            &:first-child .page-link { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-            &:last-child .page-link { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
-        }
-    }
-    .pagination-info { font-size: 0.875rem; color: #7e8299; .fw-medium { color: #3f4254; font-weight: 600; } }
+.text-light-red {
+    color: #ffd1d1;
+}
+
+.no-planning-state {
+    padding: 6rem 2rem;
+    background-color: white;
+    h4 { margin-top: 1rem; }
+}
+
+.search-box {
+    position: relative;
+    .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; }
 }
 
 .week-display { font-size: 0.95rem; }
@@ -385,10 +422,5 @@ $body-color: #f9fafb;
         border: 0;
         pointer-events: none;
     }
-}
-
-.search-box {
-    position: relative;
-    .search-icon { position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; }
 }
 </style>

@@ -13,10 +13,10 @@ class SpecialtyFactory extends Factory
     public function definition(): array
     {
         $name = $this->faker->unique()->randomElement([
-            'Cardiologie', 'Pédiatrie', 'Gynécologie', 'Dermatologie', 
+            'Cardiologie', 'Pédiatrie', 'Gynécologie', 'Dermatologie',
             'Ophtalmologie', 'Neurologie', 'Psychiatrie', 'Radiologie',
             'Urologie', 'ORL', 'Stomatologie', 'Chirurgie Générale',
-            'Médecine Interne', 'Gastro-entérologie', 'Néphrologie'
+            'Médecine Interne', 'Gastro-entérologie', 'Néphrologie',
         ]);
 
         return [

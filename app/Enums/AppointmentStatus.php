@@ -25,6 +25,7 @@ enum AppointmentStatus: string
     {
         return array_reduce(self::cases(), function ($carry, $item) {
             $carry[$item->value] = $item->label();
+
             return $carry;
         }, []);
     }

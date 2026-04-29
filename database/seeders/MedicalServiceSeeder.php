@@ -25,7 +25,7 @@ class MedicalServiceSeeder extends Seeder
             ['name' => 'Médecine Interne', 'fee' => 15000, 'desc' => 'Diagnostic et traitement des maladies complexes'],
             ['name' => 'Bloc Opératoire', 'fee' => 100000, 'desc' => 'Salles d\'interventions chirurgicales équipées'],
             ['name' => 'Pharmacie Hospitalière', 'fee' => 0, 'desc' => 'Délivrance de traitements spécifiques'],
-            ['name' => 'Autres', 'fee' => 10000, 'desc' => 'Service générique pour toute demande non répertoriée']
+            ['name' => 'Autres', 'fee' => 10000, 'desc' => 'Service générique pour toute demande non répertoriée'],
         ];
 
         foreach ($servicesList as $srv) {

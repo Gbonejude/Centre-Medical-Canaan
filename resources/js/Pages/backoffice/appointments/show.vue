@@ -175,8 +175,9 @@
                         <input type="time" v-model="postponeForm.appointment_time" class="form-control" required />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-medium">Note / Motif du report</label>
-                        <textarea v-model="postponeForm.notes" class="form-control" rows="2" placeholder="Ex: Patient indisponible..."></textarea>
+                        <label class="form-label fw-medium">Note / Motif du report <span class="required">*</span></label>
+                        <textarea v-model="postponeForm.notes" class="form-control" :class="{'is-invalid': postponeForm.errors.notes}" rows="2" placeholder="Ex: Patient indisponible..."></textarea>
+                        <div v-if="postponeForm.errors.notes" class="invalid-feedback">{{ postponeForm.errors.notes }}</div>
                     </div>
                     <div class="d-flex gap-2 justify-content-end mt-4">
                         <button type="button" class="btn btn-outline-secondary" @click="showPostponeModal = false">Annuler</button>
@@ -191,7 +192,7 @@
 </template>
 
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
@@ -257,6 +258,30 @@ function updateStatus(newStatus) {
         postponeForm.notes = '';
         showPostponeModal.value = true;
         return;
+    } else if (newStatus === 'CANCELLED') {
+        Swal.fire({
+            title: 'Motif de l\'annulation',
+            text: 'Veuillez indiquer pourquoi vous annulez ce rendez-vous :',
+            input: 'textarea',
+            inputPlaceholder: 'Entrez le motif ici...',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmer l\'annulation',
+            cancelButtonText: 'Retour',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Le motif est obligatoire pour annuler !'
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.put(route('appointments.update-status', props.appointment.uuid), { 
+                    status: newStatus, 
+                    notes: result.value 
+                }, {
+                    onSuccess: () => toast.success('Rendez-vous annulé')
+                });
+            }
+        });
     } else {
         Swal.fire({
             title: 'Confirmer l\'action',
@@ -267,7 +292,9 @@ function updateStatus(newStatus) {
             cancelButtonText: 'Annuler'
         }).then((result) => {
             if (result.isConfirmed) {
-                useForm({ status: newStatus }).put(route('appointments.update-status', props.appointment.uuid), {
+                router.put(route('appointments.update-status', props.appointment.uuid), { 
+                    status: newStatus 
+                }, {
                     onSuccess: () => toast.success('Statut mis à jour')
                 });
             }

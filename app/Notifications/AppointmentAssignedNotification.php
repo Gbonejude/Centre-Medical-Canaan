@@ -11,9 +11,7 @@ class AppointmentAssignedNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public function __construct(public Appointment $appointment)
-    {
-    }
+    public function __construct(public Appointment $appointment) {}
 
     public function via($notifiable): array
     {
@@ -24,7 +22,7 @@ class AppointmentAssignedNotification extends Notification implements ShouldQueu
     {
         return [
             'title' => 'Nouveau Patient Affecté',
-            'message' => 'On vous a affecté le rendez-vous de ' . $this->appointment->patient->lastname . ' ' . $this->appointment->patient->firstname . ' le ' . $this->appointment->appointment_date->format('d/m/Y') . ' à ' . $this->appointment->appointment_time,
+            'message' => 'On vous a affecté le rendez-vous de '.$this->appointment->patient->lastname.' '.$this->appointment->patient->firstname.' le '.$this->appointment->appointment_date->format('d/m/Y').' à '.$this->appointment->appointment_time,
             'url' => route('appointments.show', $this->appointment->id),
             'appointment_id' => $this->appointment->id,
         ];

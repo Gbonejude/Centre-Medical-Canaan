@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Uuid;
 
 class Doctor extends Model
 {
@@ -49,7 +49,6 @@ class Doctor extends Model
     {
         return $this->belongsTo(MedicalService::class, 'medical_service_id');
     }
-
 
     public function appointments()
     {

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use App\Uuid;
 
 class Specialty extends Model
 {
@@ -26,7 +26,7 @@ class Specialty extends Model
     {
         parent::boot();
         static::creating(function ($specialty) {
-            if (!$specialty->slug) {
+            if (! $specialty->slug) {
                 $specialty->slug = Str::slug($specialty->name);
             }
         });

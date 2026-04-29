@@ -10,6 +10,7 @@ class SendAppointmentEmailJob implements ShouldQueue
     use Queueable;
 
     protected $appointment;
+
     protected $type;
 
     /**
@@ -27,8 +28,10 @@ class SendAppointmentEmailJob implements ShouldQueue
     public function handle(): void
     {
         $appointment = \App\Models\Appointment::with(['patient', 'medicalService', 'doctor'])->find($this->appointment->id);
-        
-        if (!$appointment) return;
+
+        if (! $appointment) {
+            return;
+        }
 
         switch ($this->type) {
             case 'requested_patient':
@@ -47,7 +50,7 @@ class SendAppointmentEmailJob implements ShouldQueue
                 foreach ($receptionists as $staff) {
                     \Illuminate\Support\Facades\Mail::to($staff->email)
                         ->send(new \App\Mail\NewAppointmentRequestStaff($appointment));
-                    
+
                     $staff->notify(new \App\Notifications\NewAppointmentRequestNotification($appointment));
                 }
                 break;

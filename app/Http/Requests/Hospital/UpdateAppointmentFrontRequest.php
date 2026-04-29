@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Hospital;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Carbon\Carbon;
+use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateAppointmentFrontRequest extends FormRequest
 {
@@ -23,10 +23,10 @@ class UpdateAppointmentFrontRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'appointment_date'   => 'required|date|after_or_equal:today',
-            'appointment_time'   => 'required',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required',
             'medical_service_id' => 'required|exists:medical_services,id',
-            'reason'             => 'nullable|string|max:500',
+            'reason' => 'nullable|string|max:500',
         ];
     }
 
@@ -41,7 +41,7 @@ class UpdateAppointmentFrontRequest extends FormRequest
         $validator->after(function ($validator) {
             if ($this->filled(['appointment_date', 'appointment_time'])) {
                 try {
-                    $appointmentDateTime = Carbon::parse($this->appointment_date . ' ' . $this->appointment_time);
+                    $appointmentDateTime = Carbon::parse($this->appointment_date.' '.$this->appointment_time);
                     if ($appointmentDateTime->isPast()) {
                         $validator->errors()->add(
                             'appointment_time',

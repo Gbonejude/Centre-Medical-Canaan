@@ -29,9 +29,9 @@ class SpecialtySeeder extends Seeder
             ['name' => 'Néphrologie', 'slug' => 'nephrologie', 'description' => 'Maladies des reins'],
             ['name' => 'Allergologie', 'slug' => 'allergologie', 'description' => 'Diagnostic et traitement des allergies'],
             ['name' => 'Gériatrie', 'slug' => 'geriatrie', 'description' => 'Médecine des personnes âgées'],
-            ['name' => 'Anesthésiologie', 'slug' => 'anesthesiologie', 'description' => 'Anesthésie et réanimation']
+            ['name' => 'Anesthésiologie', 'slug' => 'anesthesiologie', 'description' => 'Anesthésie et réanimation'],
         ];
-        
+
         foreach ($specialtiesList as $spec) {
             Specialty::firstOrCreate(
                 ['slug' => $spec['slug']],

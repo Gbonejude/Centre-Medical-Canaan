@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\BackOffice\Hospital;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MedicalService\StoreMedicalServiceRequest;
+use App\Http\Requests\MedicalService\UpdateMedicalServiceRequest;
 use App\Models\MedicalService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Inertia\Inertia;
 
 class MedicalServiceController extends Controller implements HasMiddleware
 {
@@ -31,13 +32,9 @@ class MedicalServiceController extends Controller implements HasMiddleware
         return Inertia::render('backoffice/medical-services/create');
     }
 
-    public function store(Request $request)
+    public function store(StoreMedicalServiceRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         MedicalService::create($validated);
 
@@ -47,24 +44,20 @@ class MedicalServiceController extends Controller implements HasMiddleware
     public function show(MedicalService $medicalService)
     {
         return Inertia::render('backoffice/medical-services/show', [
-            'service' => $medicalService
+            'service' => $medicalService,
         ]);
     }
 
     public function edit(MedicalService $medicalService)
     {
         return Inertia::render('backoffice/medical-services/edit', [
-            'service' => $medicalService
+            'service' => $medicalService,
         ]);
     }
 
-    public function update(Request $request, MedicalService $medicalService)
+    public function update(UpdateMedicalServiceRequest $request, MedicalService $medicalService)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $medicalService->update($validated);
 
@@ -74,7 +67,7 @@ class MedicalServiceController extends Controller implements HasMiddleware
     public function toggleStatus(MedicalService $medicalService)
     {
         $medicalService->update([
-            'is_active' => !$medicalService->is_active
+            'is_active' => ! $medicalService->is_active,
         ]);
 
         return back()->with('success', 'Statut du service mis à jour.');
@@ -83,6 +76,7 @@ class MedicalServiceController extends Controller implements HasMiddleware
     public function destroy(MedicalService $medicalService)
     {
         $medicalService->delete();
+
         return back()->with('success', 'Service supprimé.');
     }
 }

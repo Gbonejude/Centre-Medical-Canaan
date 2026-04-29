@@ -3,17 +3,17 @@
 namespace App\Http\Controllers\BackOffice\Hospital;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Hospital\AssignDoctorRequest;
+use App\Http\Requests\Hospital\StoreAppointmentRequest;
+use App\Http\Requests\Hospital\UpdateAppointmentFrontRequest;
+use App\Http\Requests\Hospital\UpdateAppointmentStatusRequest;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\MedicalService;
-use App\Models\User;
-use App\Http\Requests\Hospital\StoreAppointmentRequest;
-use App\Http\Requests\Hospital\UpdateAppointmentFrontRequest;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Inertia\Inertia;
 
 class AppointmentController extends Controller implements HasMiddleware
 {
@@ -23,20 +23,18 @@ class AppointmentController extends Controller implements HasMiddleware
             new Middleware('permission:ADMIN|SUPER ADMIN|RECEPTIONIST|DOCTOR', except: ['create', 'store', 'mine', 'editFront', 'updateFront', 'cancelFront']),
         ];
     }
+
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isDoctor = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctor = $user->hasPermissionTo('DOCTOR') && ! $user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         $query = Appointment::with(['patient', 'doctor', 'medicalService']);
 
-        // Si c'est un docteur, on filtre uniquement ses rendez-vous
         if ($isDoctor) {
             $query->where('doctor_id', $user->id);
         }
 
-
-        // Statistiques adaptées au rôle
         $statsQuery = Appointment::query();
         if ($isDoctor) {
             $statsQuery->where('doctor_id', $user->id);
@@ -49,9 +47,9 @@ class AppointmentController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('backoffice/appointments/index', [
-            'appointments'     => $query->latest()->get(),
-            'stats'            => $stats,
-            'isDoctor'         => $isDoctor,
+            'appointments' => $query->latest()->get(),
+            'stats' => $stats,
+            'isDoctor' => $isDoctor,
             'availableDoctors' => Doctor::with(['user', 'specialty', 'medicalService'])->where('is_available', true)->get(),
         ]);
     }
@@ -95,23 +93,18 @@ class AppointmentController extends Controller implements HasMiddleware
             ->get();
 
         return Inertia::render('frontoffice/appointments/index', [
-            'appointments' => $appointments
+            'appointments' => $appointments,
         ]);
     }
 
-    public function assignDoctor(Request $request, $uuid)
+    public function assignDoctor(AssignDoctorRequest $request, $uuid)
     {
         $appointment = Appointment::where('uuid', $uuid)->firstOrFail();
 
-        $validated = $request->validate([
-            'doctor_id' => 'required|exists:doctors,id',
-            'notes' => 'nullable|string',
-            'receptionist_notes' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $doctor = Doctor::with('user')->findOrFail($validated['doctor_id']);
-        
-        // Vérifier si le docteur est déjà occupé à cette heure
+
         $isBusy = Appointment::where('doctor_id', $doctor->user_id)
             ->where('appointment_date', $appointment->appointment_date)
             ->where('appointment_time', $appointment->appointment_time)
@@ -141,11 +134,10 @@ class AppointmentController extends Controller implements HasMiddleware
     public function show(Appointment $appointment)
     {
         $user = auth()->user();
-        $isDoctor = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctor = $user->hasPermissionTo('DOCTOR') && ! $user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         $appointment->load(['patient', 'doctor', 'medicalService']);
 
-        // Récupérer les IDs des médecins qui ont déjà un rendez-vous à cette heure précise
         $busyDoctorIds = Appointment::where('appointment_date', $appointment->appointment_date)
             ->where('appointment_time', $appointment->appointment_time)
             ->whereIn('status', ['PENDING', 'CONFIRMED'])
@@ -155,7 +147,7 @@ class AppointmentController extends Controller implements HasMiddleware
 
         $doctors = Doctor::with(['user', 'specialty', 'medicalService'])
             ->where('is_available', true)
-            ->when($appointment->medicalService->name !== 'Autres', function($q) use ($appointment) {
+            ->when($appointment->medicalService->name !== 'Autres', function ($q) use ($appointment) {
                 return $q->where('medical_service_id', $appointment->medical_service_id);
             })
             ->get();
@@ -164,32 +156,31 @@ class AppointmentController extends Controller implements HasMiddleware
             'appointment' => $appointment,
             'isDoctor' => $isDoctor,
             'doctors' => $doctors,
-            'busyDoctorIds' => $busyDoctorIds, // On passe les IDs pour gérer l'affichage "Indisponible"
+            'busyDoctorIds' => $busyDoctorIds,
         ]);
     }
 
-    public function updateStatus(Request $request, Appointment $appointment)
+    public function updateStatus(UpdateAppointmentStatusRequest $request, Appointment $appointment)
     {
-        $validated = $request->validate([
-            'status' => 'required|in:COMPLETED,CANCELLED,POSTPONED,PENDING,CONFIRMED',
-            'notes' => 'nullable|string',
-            'appointment_date' => 'nullable|date|after_or_equal:today',
-            'appointment_time' => 'nullable',
-        ]);
+        $validated = $request->validated();
 
         $user = auth()->user();
-        $isDoctorOnly = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctorOnly = $user->hasPermissionTo('DOCTOR') && ! $user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         if ($isDoctorOnly && in_array($validated['status'], ['CANCELLED', 'POSTPONED'])) {
             return back()->with('error', "Vous n'êtes pas autorisé à annuler ou reporter un rendez-vous. Veuillez contacter la réception.");
         }
 
         $updateData = ['status' => $validated['status']];
-        
+
         if ($validated['status'] === 'POSTPONED') {
-            if ($validated['appointment_date']) $updateData['appointment_date'] = $validated['appointment_date'];
-            if ($validated['appointment_time']) $updateData['appointment_time'] = $validated['appointment_time'];
-            $updateData['doctor_id'] = null; // On désaffecte le médecin pour forcer une nouvelle affectation
+            if ($validated['appointment_date']) {
+                $updateData['appointment_date'] = $validated['appointment_date'];
+            }
+            if ($validated['appointment_time']) {
+                $updateData['appointment_time'] = $validated['appointment_time'];
+            }
+            $updateData['doctor_id'] = null;
         }
 
         $notes = $validated['notes'] ?? null;
@@ -209,13 +200,13 @@ class AppointmentController extends Controller implements HasMiddleware
     public function cancelFront(Request $request, Appointment $appointment)
     {
         $user = auth('guest')->user();
-        
-        if (!$user || $appointment->patient_id !== $user->id) {
+
+        if (! $user || $appointment->patient_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
-        if ($appointment->status !== 'PENDING') {
-            return back()->with('error', 'Vous ne pouvez plus annuler ce rendez-vous car il est déjà confirmé ou traité. Veuillez contacter la clinique.');
+        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED'])) {
+            return back()->with('error', 'Ce rendez-vous ne peut plus être annulé.');
         }
 
         $appointment->update(['status' => 'CANCELLED']);
@@ -227,12 +218,12 @@ class AppointmentController extends Controller implements HasMiddleware
     {
         $user = auth('guest')->user();
 
-        if (!$user || $appointment->patient_id !== $user->id) {
+        if (! $user || $appointment->patient_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
-        if ($appointment->status !== 'PENDING') {
-            return redirect()->route('front.appointments.mine')->with('error', 'Seuls les rendez-vous en attente peuvent être modifiés.');
+        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED'])) {
+            return redirect()->route('front.appointments.mine')->with('error', 'Ce rendez-vous ne peut plus être modifié.');
         }
 
         return Inertia::render('frontoffice/appointments/edit', [
@@ -245,12 +236,12 @@ class AppointmentController extends Controller implements HasMiddleware
     {
         $user = auth('guest')->user();
 
-        if (!$user || $appointment->patient_id !== $user->id) {
+        if (! $user || $appointment->patient_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 
-        if ($appointment->status !== 'PENDING') {
-            return back()->with('error', 'Seuls les rendez-vous en attente peuvent être modifiés.');
+        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED'])) {
+            return back()->with('error', 'Ce rendez-vous ne peut plus être modifié.');
         }
 
         $validated = $request->validated();
@@ -264,7 +255,7 @@ class AppointmentController extends Controller implements HasMiddleware
     {
         $user = auth('guest')->user();
 
-        if (!$user || $appointment->patient_id !== $user->id) {
+        if (! $user || $appointment->patient_id !== $user->id) {
             abort(403, 'Unauthorized action.');
         }
 

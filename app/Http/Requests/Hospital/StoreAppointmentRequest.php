@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Hospital;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Carbon\Carbon;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAppointmentRequest extends FormRequest
 {
@@ -24,9 +24,9 @@ class StoreAppointmentRequest extends FormRequest
     {
         return [
             'medical_service_id' => 'required|exists:medical_services,id',
-            'appointment_date'   => 'required|date|after_or_equal:today',
-            'appointment_time'   => 'required',
-            'reason'             => 'nullable|string',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required',
+            'reason' => 'nullable|string',
         ];
     }
 
@@ -41,7 +41,7 @@ class StoreAppointmentRequest extends FormRequest
         $validator->after(function ($validator) {
             if ($this->filled(['appointment_date', 'appointment_time'])) {
                 try {
-                    $appointmentDateTime = Carbon::parse($this->appointment_date . ' ' . $this->appointment_time);
+                    $appointmentDateTime = Carbon::parse($this->appointment_date.' '.$this->appointment_time);
                     if ($appointmentDateTime->isPast()) {
                         $validator->errors()->add(
                             'appointment_time',

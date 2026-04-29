@@ -23,7 +23,7 @@ return [
         'http://localhost:8000',
         'http://admin.localhost:8000',
         'http://localhost',
-        'http://admin.localhost'
+        'http://admin.localhost',
     ],
 
     'allowed_origins_patterns' => [],

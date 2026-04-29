@@ -5,10 +5,7 @@ namespace App\Http\Controllers\BackOffice\Hospital;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Doctor;
-use App\Models\MedicalService;
 use App\Models\Patient;
-use App\Models\User;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -16,7 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         if ($user->hasRole('SUPER ADMIN') || $user->hasRole('HOSPITAL ADMIN')) {
             return $this->adminDashboard();
         }
@@ -55,6 +52,7 @@ class DashboardController extends Controller
     protected function doctorDashboard()
     {
         $user = auth()->user();
+
         return Inertia::render('backoffice/hospital/doctor_dashboard', [
             'today_appointments' => Appointment::with(['patient', 'medicalService'])
                 ->where('doctor_id', $user->id)
@@ -67,7 +65,7 @@ class DashboardController extends Controller
                     ->where('status', 'COMPLETED')
                     ->whereMonth('appointment_date', now()->month)
                     ->count(),
-            ]
+            ],
         ]);
     }
 

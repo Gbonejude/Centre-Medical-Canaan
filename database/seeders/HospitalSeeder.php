@@ -5,8 +5,8 @@ namespace Database\Seeders;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\MedicalService;
-use App\Models\Specialty;
 use App\Models\Patient;
+use App\Models\Specialty;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -36,9 +36,9 @@ class HospitalSeeder extends Seeder
             ['name' => 'Néphrologie', 'slug' => 'nephrologie', 'description' => 'Maladies des reins'],
             ['name' => 'Allergologie', 'slug' => 'allergologie', 'description' => 'Diagnostic et traitement des allergies'],
             ['name' => 'Gériatrie', 'slug' => 'geriatrie', 'description' => 'Médecine des personnes âgées'],
-            ['name' => 'Anesthésiologie', 'slug' => 'anesthesiologie', 'description' => 'Anesthésie et réanimation']
+            ['name' => 'Anesthésiologie', 'slug' => 'anesthesiologie', 'description' => 'Anesthésie et réanimation'],
         ];
-        
+
         $specialtyModels = collect();
         foreach ($specialtiesList as $spec) {
             $specialtyModels->push(Specialty::firstOrCreate(
@@ -63,7 +63,7 @@ class HospitalSeeder extends Seeder
             ['name' => 'Service de Psychiatrie', 'fee' => 15000, 'desc' => 'Hospitalisation et suivi psychiatrique'],
             ['name' => 'Médecine Interne', 'fee' => 15000, 'desc' => 'Diagnostic et traitement des maladies complexes'],
             ['name' => 'Bloc Opératoire', 'fee' => 100000, 'desc' => 'Salles d\'interventions chirurgicales équipées'],
-            ['name' => 'Pharmacie Hospitalière', 'fee' => 0, 'desc' => 'Délivrance de traitements spécifiques']
+            ['name' => 'Pharmacie Hospitalière', 'fee' => 0, 'desc' => 'Délivrance de traitements spécifiques'],
         ];
 
         $serviceModels = collect();
@@ -89,7 +89,7 @@ class HospitalSeeder extends Seeder
                 'firstname' => $first,
                 'lastname' => $last,
                 'email' => strtolower($first.'.'.$last.$i.'@canaan.com'),
-                'phone' => '+336000010' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'phone' => '+336000010'.str_pad($i, 2, '0', STR_PAD_LEFT),
                 'password' => Hash::make('password'),
                 'active' => true,
             ]);
@@ -99,7 +99,7 @@ class HospitalSeeder extends Seeder
                 'user_id' => $user->id,
                 'medical_service_id' => $serviceModels->random()->id,
                 'specialty_id' => $specialtyModels->random()->id,
-                'bio' => 'Dr. '.$last.' est un expert reconnu avec plus de ' . rand(5, 25) . ' ans d\'expérience.',
+                'bio' => 'Dr. '.$last.' est un expert reconnu avec plus de '.rand(5, 25).' ans d\'expérience.',
                 'is_available' => true,
             ]));
         }
@@ -115,7 +115,7 @@ class HospitalSeeder extends Seeder
                 'firstname' => $first,
                 'lastname' => $last,
                 'email' => strtolower($first.$last.$i.'@patient.com'),
-                'phone' => '+337000020' . str_pad($i, 2, '0', STR_PAD_LEFT),
+                'phone' => '+337000020'.str_pad($i, 2, '0', STR_PAD_LEFT),
                 'password' => Hash::make('password'),
                 'active' => true,
             ]);
@@ -135,15 +135,15 @@ class HospitalSeeder extends Seeder
             'Visite de contrôle post-opératoire.',
             'Bilan de santé annuel.',
             'Symptômes grippaux et forte fièvre.',
-            'Douleurs articulaires.'
+            'Douleurs articulaires.',
         ];
 
         foreach (range(1, 150) as $index) {
             $doctor = $doctorModels->random();
             $patient = $patientModels->random();
-            
+
             $statuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
-            
+
             Appointment::create([
                 'patient_id' => $patient->user_id,
                 'doctor_id' => $doctor->user_id,

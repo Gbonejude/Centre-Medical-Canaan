@@ -7,7 +7,6 @@ use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class Appointment extends Model
 {
@@ -70,7 +69,8 @@ class Appointment extends Model
     {
         return $this->belongsTo(MedicalService::class, 'medical_service_id');
     }
-      public function service()
+
+    public function service()
     {
         return $this->medicalService();
     }

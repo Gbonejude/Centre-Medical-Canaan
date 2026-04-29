@@ -28,7 +28,7 @@ class DoctorFactory extends Factory
                 'friday' => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
                 'saturday' => ['enabled' => false, 'slots' => []],
                 'sunday' => ['enabled' => false, 'slots' => []],
-            ]
+            ],
         ];
     }
 }

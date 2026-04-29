@@ -3,15 +3,15 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BackOffice\AdminController;
+use App\Http\Controllers\BackOffice\Hospital\AppointmentController;
+use App\Http\Controllers\BackOffice\Hospital\DoctorController;
+use App\Http\Controllers\BackOffice\Hospital\MedicalServiceController;
+use App\Http\Controllers\BackOffice\Hospital\SpecialtyController;
 use App\Http\Controllers\BackOffice\Notification\NotificationController;
 use App\Http\Controllers\BackOffice\ProfileController;
 use App\Http\Controllers\BackOffice\UserController;
-use App\Http\Controllers\BackOffice\Hospital\MedicalServiceController;
-use App\Http\Controllers\BackOffice\Hospital\SpecialtyController;
-use App\Http\Controllers\BackOffice\Hospital\DoctorController;
-use App\Http\Controllers\BackOffice\Hospital\AppointmentController;
-use App\Http\Controllers\FrontOffice\PagesController;
 use App\Http\Controllers\FrontOffice\Auth\AuthGuestController;
+use App\Http\Controllers\FrontOffice\PagesController;
 use Illuminate\Support\Facades\Route;
 
 // Extract domain from APP_URL

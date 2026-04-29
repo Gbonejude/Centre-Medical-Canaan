@@ -26,7 +26,7 @@ class PatientSeeder extends Seeder
                 $combinations[] = ['first' => $first, 'last' => $last, 'gender' => 'female'];
             }
         }
-        
+
         // Exact same random seed as DoctorSeeder
         mt_srand(12345);
         shuffle($combinations);
@@ -41,12 +41,12 @@ class PatientSeeder extends Seeder
 
             $user = User::create([
                 'firstname' => $first,
-                'lastname'  => $last,
-                'email'     => strtolower($first.'.'.$last.'@patient.com'),
-                'phone'     => '+337000020' . str_pad($idx, 2, '0', STR_PAD_LEFT),
-                'password'  => Hash::make('password'),
-                'gender'    => $name['gender'],
-                'active'    => true,
+                'lastname' => $last,
+                'email' => strtolower($first.'.'.$last.'@patient.com'),
+                'phone' => '+337000020'.str_pad($idx, 2, '0', STR_PAD_LEFT),
+                'password' => Hash::make('password'),
+                'gender' => $name['gender'],
+                'active' => true,
             ]);
             $user->givePermissionTo('PATIENT');
 
