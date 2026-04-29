@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Specialty extends Model
 {
-    use HasFactory;
+    use HasFactory, Uuid;
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $fillable = ['name', 'slug', 'description', 'is_active'];
 
@@ -20,7 +26,7 @@ class Specialty extends Model
     {
         parent::boot();
         static::creating(function ($specialty) {
-            if (!$specialty->slug) {
+            if (! $specialty->slug) {
                 $specialty->slug = Str::slug($specialty->name);
             }
         });

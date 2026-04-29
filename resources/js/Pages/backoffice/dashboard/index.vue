@@ -87,7 +87,7 @@
                             <div class="doctor-name">{{ app.doctor }} • {{ app.service }}</div>
                         </div>
                         <div class="app-status">
-                            <span :class="'status-badge ' + app.status.toLowerCase()">
+                            <span :class="'status-badge ' + app.status_key">
                                 {{ app.status }}
                             </span>
                         </div>
@@ -131,7 +131,7 @@
                             <i class="fas fa-hospital-symbol"></i> Gérer les Services
                         </button>
                         <button @click="$inertia.visit(route('schedules.index'))" class="action-btn">
-                            <i class="fas fa-calendar-alt"></i> Consulter le Planning
+                            <i class="fas fa-calendar-alt"></i> Gérer les Disponibilités
                         </button>
                     </div>
                 </div>

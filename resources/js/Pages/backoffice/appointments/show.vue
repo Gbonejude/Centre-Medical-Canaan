@@ -74,7 +74,7 @@
 
                 <div class="col-lg-5">
                     <!-- Actions d'Affectation -->
-                    <div class="card action-card mb-4" v-if="appointment.status === 'PENDING'">
+                    <div class="card action-card mb-4" v-if="['PENDING', 'POSTPONED'].includes(appointment.status)">
                         <div class="card-header bg-primary text-white">
                             <div class="card-title text-white">
                                 <i class="fa fa-user-md me-2"></i>
@@ -86,12 +86,18 @@
                                 <div class="form-group mb-3">
                                     <label class="form-label">Choisir un médecin disponible <span class="required">*</span></label>
                                     <div class="input-wrapper">
-                                        <select class="form-control" v-model="assignForm.doctor_id" required>
-                                            <option value="" disabled>Sélectionner un docteur</option>
-                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.user_id">
-                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} ({{ doctor.user.phone || 'Pas de tél' }})
+                                        <select class="form-control" v-model="assignForm.doctor_id" required :disabled="filteredDoctors.length === 0">
+                                            <option value="" disabled>{{ filteredDoctors.length === 0 ? 'Aucun médecin pour ce service' : 'Sélectionner un docteur' }}</option>
+                                            <option v-for="doctor in filteredDoctors" :key="doctor.id" :value="doctor.id" :disabled="busyDoctorIds.includes(doctor.user_id)">
+                                                Dr. {{ doctor.user.lastname }} {{ doctor.user.firstname }} 
+                                                ({{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }})
+                                                {{ busyDoctorIds.includes(doctor.user_id) ? ' - (Indisponible)' : '' }}
                                             </option>
                                         </select>
+                                        <div v-if="filteredDoctors.length === 0" class="alert alert-warning mt-2 py-2 small">
+                                            <i class="fa fa-exclamation-triangle me-1"></i>
+                                            Aucun médecin n'est rattaché au service <strong>{{ appointment.medical_service?.name }}</strong>.
+                                        </div>
                                     </div>
                                     <p class="text-muted small mt-2">
                                         <i class="fa fa-info-circle me-1"></i>
@@ -104,7 +110,7 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100" :disabled="assignForm.processing">
                                     <i class="fa fa-check-circle me-1"></i>
-                                    {{ assignForm.processing ? 'Confirmation...' : 'Confirmer le Rendez-vous' }}
+                                    {{ assignForm.processing ? 'Chargement...' : (appointment.status === 'POSTPONED' ? 'Confirmer la nouvelle date' : 'Confirmer le Rendez-vous') }}
                                 </button>
                             </form>
                         </div>
@@ -127,8 +133,8 @@
                                     <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('CANCELLED')" class="btn btn-outline-danger">
                                         <i class="fa fa-times-circle me-1"></i> Annuler le Rendez-vous
                                     </button>
-                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('POSTPONED')" class="btn btn-outline-warning">
-                                        <i class="fa fa-clock me-1"></i> Reporter le Rendez-vous
+                                    <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('POSTPONED')" class="btn btn-warning text-white">
+                                        <i class="fa fa-calendar-alt me-1"></i> Reprogrammer la date
                                     </button>
                                 </template>
                             </div>
@@ -147,46 +153,71 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Reporter le Rendez-vous -->
+    <div v-if="showPostponeModal" class="modal-backdrop-custom" @click.self="showPostponeModal = false">
+        <div class="modal-dialog-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title-custom">
+                    <i class="fa fa-calendar-alt me-2 text-warning"></i>
+                    Reprogrammer le rendez-vous
+                </h5>
+                <button type="button" class="btn-close" @click="showPostponeModal = false"></button>
+            </div>
+            <div class="modal-body-custom">
+                <form @submit.prevent="submitPostpone">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nouvelle Date <span class="required">*</span></label>
+                        <DatePickerComponent v-model="postponeForm.appointment_date" minDate="today" placeholder="Choisir une date" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nouvelle Heure <span class="required">*</span></label>
+                        <input type="time" v-model="postponeForm.appointment_time" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Note / Motif du report <span class="required">*</span></label>
+                        <textarea v-model="postponeForm.notes" class="form-control" :class="{'is-invalid': postponeForm.errors.notes}" rows="2" placeholder="Ex: Patient indisponible..."></textarea>
+                        <div v-if="postponeForm.errors.notes" class="invalid-feedback">{{ postponeForm.errors.notes }}</div>
+                    </div>
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <button type="button" class="btn btn-outline-secondary" @click="showPostponeModal = false">Annuler</button>
+                        <button type="submit" class="btn btn-warning text-white" :disabled="postponeForm.processing">
+                            <i class="fa fa-check me-1"></i> Confirmer le report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
+import DatePickerComponent from '../../components/DateComponent.vue';
 
 const props = defineProps({
     appointment: Object,
     isDoctor: Boolean,
     doctors: Array,
+    busyDoctorIds: Array,
 });
 
 const filteredDoctors = computed(() => {
-    const appDate = props.appointment.appointment_date;
-    const appTime = props.appointment.appointment_time.substring(0, 5); // HH:MM
-    
-    // Day of week
-    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dateObj = new Date(appDate);
-    const dayKey = daysMap[dateObj.getDay()];
-
-    return props.doctors.filter(d => {
-        // Filter by availability (Planning)
-        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
-            return false;
-        }
-
-        const slots = d.availability[dayKey].slots;
-        if (!slots || slots.length === 0) return false;
-
-        // Check if appointment time falls within any of the doctor's slots
-        return slots.some(slot => {
-            return appTime >= slot.start && appTime <= slot.end;
-        });
-    });
+    return props.doctors || [];
 });
 
 const toast = useToast();
+
+const showPostponeModal = ref(false);
+const postponeForm = useForm({
+    status: 'POSTPONED',
+    appointment_date: '',
+    appointment_time: '',
+    notes: '',
+});
 
 const assignForm = useForm({
     doctor_id: '',
@@ -194,28 +225,81 @@ const assignForm = useForm({
 });
 
 function confirmAppointment() {
-    assignForm.post(route('appointments.confirm', props.appointment.id), {
+    assignForm.post(route('appointments.confirm', props.appointment.uuid), {
         onSuccess: () => {
             toast.success('Rendez-vous confirmé et médecin affecté');
         }
     });
 }
 
-function updateStatus(newStatus) {
-    Swal.fire({
-        title: 'Changer le statut ?',
-        text: `Voulez-vous passer ce rendez-vous au statut : ${newStatus} ?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Oui, changer',
-        cancelButtonText: 'Annuler'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            useForm({ status: newStatus }).put(route('appointments.update-status', props.appointment.id), {
-                onSuccess: () => toast.success('Statut mis à jour')
-            });
+function submitPostpone() {
+    postponeForm.put(route('appointments.update-status', props.appointment.uuid), {
+        onSuccess: () => {
+            showPostponeModal.value = false;
+            toast.success('Rendez-vous reporté avec succès');
         }
     });
+}
+
+function updateStatus(newStatus) {
+    const actions = {
+        'CONFIRMED': 'confirmer',
+        'COMPLETED': 'terminer',
+        'CANCELLED': 'annuler',
+        'POSTPONED': 'reporter',
+        'PENDING': 'remettre en attente'
+    };
+    
+    const actionText = actions[newStatus] || 'modifier';
+
+    if (newStatus === 'POSTPONED') {
+        postponeForm.appointment_date = props.appointment.appointment_date?.substring(0, 10) ?? '';
+        postponeForm.appointment_time = props.appointment.appointment_time?.substring(0, 5) ?? '';
+        postponeForm.notes = '';
+        showPostponeModal.value = true;
+        return;
+    } else if (newStatus === 'CANCELLED') {
+        Swal.fire({
+            title: 'Motif de l\'annulation',
+            text: 'Veuillez indiquer pourquoi vous annulez ce rendez-vous :',
+            input: 'textarea',
+            inputPlaceholder: 'Entrez le motif ici...',
+            showCancelButton: true,
+            confirmButtonText: 'Confirmer l\'annulation',
+            cancelButtonText: 'Retour',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Le motif est obligatoire pour annuler !'
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.put(route('appointments.update-status', props.appointment.uuid), { 
+                    status: newStatus, 
+                    notes: result.value 
+                }, {
+                    onSuccess: () => toast.success('Rendez-vous annulé')
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            title: 'Confirmer l\'action',
+            text: `Voulez-vous vraiment ${actionText} ce rendez-vous ?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, confirmer',
+            cancelButtonText: 'Annuler'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.put(route('appointments.update-status', props.appointment.uuid), { 
+                    status: newStatus 
+                }, {
+                    onSuccess: () => toast.success('Statut mis à jour')
+                });
+            }
+        });
+    }
 }
 
 function formatDate(date) {
@@ -275,4 +359,19 @@ $border-radius: 0.475rem;
 .form-label { font-weight: 500; }
 .form-control { border-radius: 8px; border: 1px solid $border-color; padding: 0.6rem 1rem; }
 .required { color: $danger-color; }
+
+.modal-backdrop-custom {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1050;
+}
+.modal-dialog-custom {
+    background: #fff; border-radius: 12px; width: 100%; max-width: 480px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.18); overflow: hidden;
+}
+.modal-header-custom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid $border-color;
+    .modal-title-custom { font-weight: 600; font-size: 1.05rem; margin: 0; }
+}
+.modal-body-custom { padding: 1.5rem; }
 </style>

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('medical_services', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('name');
             $table->text('description')->nullable();
             $table->integer('consultation_fee')->default(0);

@@ -8,11 +8,10 @@ use App\Http\Requests\User\UpdateRequest;
 use App\Mail\NewUserMail;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use Spatie\Permission\Models\Permission;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Mail;
+use Spatie\Permission\Models\Permission;
 
 class UserController extends Controller implements HasMiddleware
 {
@@ -26,7 +25,7 @@ class UserController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $search = $request->get('search', '');
-        $permissionFilter = $request->get('p', ''); 
+        $permissionFilter = $request->get('p', '');
 
         $users = User::with(['roles', 'media', 'permissions'])
             ->excludeSystemAdmins()
@@ -41,8 +40,8 @@ class UserController extends Controller implements HasMiddleware
 
             $user->display_permissions = $user->permissions->map(function ($permission) {
                 return [
-                    'id'         => 'permission-'.$permission->id,
-                    'name'       => $permission->name,
+                    'id' => 'permission-'.$permission->id,
+                    'name' => $permission->name,
                     'encoded_id' => base64_encode($permission->id),
                 ];
             })->values();
@@ -58,8 +57,8 @@ class UserController extends Controller implements HasMiddleware
             ->get()
             ->map(function ($permission) {
                 return [
-                    'id'         => $permission->id,
-                    'name'       => $permission->name,
+                    'id' => $permission->id,
+                    'name' => $permission->name,
                     'encoded_id' => base64_encode($permission->id),
                     'is_customer' => false,
                 ];
@@ -93,12 +92,12 @@ class UserController extends Controller implements HasMiddleware
             $userData = $request->only(['firstname', 'lastname', 'email', 'gender', 'phone', 'birthday']);
             $passwordGenerate = $this->generatePassword();
             $userData['password'] = bcrypt($passwordGenerate);
-            
+
             $permissions = $request->input('permissions', []);
             $user = User::create($userData);
 
             if ($user) {
-                if (!empty($permissions)) {
+                if (! empty($permissions)) {
                     $user->permissions()->sync($permissions);
                 }
                 if ($request->hasFile('image')) {
@@ -154,7 +153,7 @@ class UserController extends Controller implements HasMiddleware
         try {
             $user = User::where('uuid', $uuid)->firstOrFail();
             $userData = $request->only(['firstname', 'lastname', 'email', 'gender', 'phone', 'birthday']);
-            
+
             if ($request->filled('password')) {
                 $userData['password'] = $request->password;
             }
@@ -183,7 +182,8 @@ class UserController extends Controller implements HasMiddleware
     public function updateStatus($uuid)
     {
         $user = User::where('uuid', $uuid)->firstOrFail();
-        $user->update(['active' => !$user->active]);
+        $user->update(['active' => ! $user->active]);
+
         return redirect()->route('users.index')->with('success', 'Statut mis à jour.');
     }
 
@@ -191,6 +191,7 @@ class UserController extends Controller implements HasMiddleware
     {
         $user = User::where('uuid', $uuid)->firstOrFail();
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'Utilisateur supprimé.');
     }
 

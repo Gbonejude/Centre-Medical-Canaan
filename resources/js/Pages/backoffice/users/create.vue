@@ -21,7 +21,7 @@
                         <i class="fa fa-user-plus icon-circle"></i>
                         <span>Ajouter un Nouvel Utilisateur</span>
                     </div>
-                    <p class="card-subtitle">Créer un nouveau compte utilisateur avec les permissions appropriées</p>
+                    <p class="card-subtitle">Créer un nouveau compte utilisateur avec un rôle spécifique</p>
                 </div>
 
                 <div class="card-body">
@@ -35,18 +35,13 @@
                                         <label>Image de Profil</label>
                                         <div class="image-upload-container">
                                             <div class="image-preview-area">
-                                                <div v-if="imagePreview || form.image" class="image-preview">
-                                                    <img :src="imagePreview || form.image" alt="Aperçu du profil" />
-                                                    <div class="image-overlay">
-                                                        <button type="button" @click="removeImage" class="btn-remove-image">
-                                                            <i class="fa fa-trash"></i>
-                                                        </button>
-                                                    </div>
+                                                <div v-if="imagePreview" class="image-preview" @click="triggerFileInput">
+                                                    <img :src="imagePreview" alt="Aperçu" />
                                                 </div>
                                                 <div v-else class="image-placeholder" @click="triggerFileInput">
                                                     <div class="placeholder-content">
                                                         <i class="fa fa-camera"></i>
-                                                        <p>Cliquez pour télécharger une photo</p>
+                                                        <p>Cliquez pour télécharger</p>
                                                         <small>JPG, PNG ou GIF (Max: 2Mo)</small>
                                                     </div>
                                                 </div>
@@ -56,26 +51,17 @@
                                                 type="file"
                                                 @change="handleFileUpload"
                                                 accept="image/*"
-                                                class="file-input"
                                                 style="display: none;"
                                             />
-                                            <div class="upload-actions">
+                                            <div class="upload-actions" v-if="imagePreview">
                                                 <button type="button" @click="triggerFileInput" class="btn btn-outline-primary btn-sm">
-                                                    <i class="fa fa-upload"></i>
-                                                    {{ imagePreview ? 'Changer l\'image' : 'Télécharger une image' }}
+                                                    <i class="fa fa-sync"></i> Changer
                                                 </button>
-                                                <button v-if="imagePreview" type="button" @click="removeImage" class="btn btn-outline-danger btn-sm">
-                                                    <i class="fa fa-times"></i>
-                                                    Supprimer
+                                                <button type="button" @click="removeImage" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fa fa-trash"></i> Supprimer
                                                 </button>
                                             </div>
                                         </div>
-                                        <transition name="fade">
-                                            <div v-if="errors.image" class="error-message">
-                                                <i class="fa fa-exclamation-circle"></i>
-                                                {{ errors.image[0] }}
-                                            </div>
-                                        </transition>
                                     </div>
                                 </div>
                             </div>
@@ -204,7 +190,7 @@
                                         <div class="input-wrapper">
                                             <i class="fa fa-envelope input-icon"></i>
                                             <input id="email" type="email" class="form-control" v-model="form.email"
-                                                placeholder="Entrez l'adresse email"
+                                                placeholder="Entrez l l'adresse email"
                                                 :class="{ 'is-invalid': errors.email }" />
                                         </div>
                                         <transition name="fade">
@@ -230,28 +216,34 @@
                         </div>
 
                         <div class="form-section">
-                            <div class="section-title">Rôles & Permissions</div>
+                            <div class="section-title">Rôle de l'Utilisateur</div>
 
                             <div class="permissions-container">
                                 <div class="permissions-title">
                                     <i class="fa fa-shield-alt me-2"></i>
-                                    <span>Attribuer des permissions à cet utilisateur</span>
+                                    <span>Attribuer un rôle unique à cet utilisateur</span>
                                 </div>
 
                                 <div class="permissions-grid">
                                     <div v-for="permission in permissions" :key="permission.id" class="permission-item">
-                                        <div class="custom-checkbox">
-                                            <input type="checkbox" :id="'permission-' + permission.id"
-                                                :value="permission.id" v-model="form.permissions" />
+                                        <div class="custom-radio">
+                                            <input type="radio" :id="'permission-' + permission.id"
+                                                :value="permission.id" v-model="form.selectedPermission" name="user_role" />
                                             <label :for="'permission-' + permission.id">
-                                                <span class="checkbox-icon">
-                                                    <i class="fa fa-check"></i>
+                                                <span class="radio-icon">
+                                                    <i class="fa fa-circle"></i>
                                                 </span>
-                                                <span class="checkbox-label">{{ translateRole(permission.name) }}</span>
+                                                <span class="radio-label">{{ translateRole(permission.name) }}</span>
                                             </label>
                                         </div>
                                     </div>
                                 </div>
+                                <transition name="fade">
+                                    <div v-if="errors.permissions" class="error-message mt-2">
+                                        <i class="fa fa-exclamation-circle"></i>
+                                        {{ errors.permissions[0] }}
+                                    </div>
+                                </transition>
                             </div>
                         </div>
 
@@ -307,6 +299,7 @@ const form = useForm({
     phone: '',
     email: '',
     permissions: [],
+    selectedPermission: null,
     birthday: '',
     image: null,
 });
@@ -380,6 +373,10 @@ function translateRole(roleName) {
 
 function save() {
     isSubmitting.value = true;
+    
+    // Convert single selection to array for backend compatibility
+    form.permissions = form.selectedPermission ? [form.selectedPermission] : [];
+    
     form.post(route("users.store"), {
         preserveState: true,
         preserveScroll: true,
@@ -408,7 +405,7 @@ $border-radius: 0.475rem;
 .form-card { background-color: white; border-radius: $border-radius; box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.075); border: none; .card-header { padding: 1.5rem; border-bottom: 1px solid $border-color; position: relative; &::after { content: ''; position: absolute; bottom: -1px; left: 1.5rem; width: 80px; height: 3px; background: linear-gradient(to right, $primary-color, lighten($primary-color, 20%)); border-radius: 3px 3px 0 0; } .card-title { font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; .icon-circle { width: 35px; height: 35px; border-radius: 50%; background: rgba($primary-color, 0.1); color: $primary-color; display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; } } .card-subtitle { margin: 0; color: #6c757d; font-size: 0.95rem; padding-left: 3rem; } } .card-body { padding: 1.5rem; } }
 .form-section { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px dashed $border-color; &:last-child { border-bottom: none; } .section-title { font-weight: 600; color: $secondary-color; margin-bottom: 1.25rem; position: relative; padding-left: 0.75rem; font-size: 1.1rem; &::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background-color: $primary-color; border-radius: 4px; } } }
 .form-group { margin-bottom: 1.5rem; label { display: block; margin-bottom: 0.5rem; font-weight: 500; .required { color: $danger-color; } } .input-wrapper { position: relative; .input-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: #a1a5b7; } .form-control { padding: 0.75rem 0.75rem 0.75rem 2.5rem; border-radius: $border-radius; border: 1px solid $border-color; font-size: 0.95rem; &:focus { border-color: $primary-color; box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.25); } } } .phone-input-wrapper { :deep(.phone-input) { border: 1px solid $border-color; border-radius: $border-radius; &:focus-within { border-color: $primary-color; box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.25); } } :deep(.vti__dropdown) { border-right: 1px solid $border-color; background: #f8f9fa; } } .gender-options { display: flex; gap: 1.5rem; .gender-option { input[type="radio"] { opacity: 0; position: absolute; &:checked + label { color: $primary-color; background-color: rgba($primary-color, 0.1); border-color: rgba($primary-color, 0.5); i { color: $primary-color; } } } label { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border: 1px solid $border-color; border-radius: $border-radius; cursor: pointer; i { color: #a1a5b7; } } } } .error-message { color: $danger-color; font-size: 0.85rem; margin-top: 0.5rem; } .form-text { margin-top: 0.5rem; font-size: 0.825rem; color: #6c757d; } }
-.permissions-container { background-color: #f3f6f9; border-radius: $border-radius; padding: 1.25rem; .permissions-title { display: flex; align-items: center; font-weight: 500; margin-bottom: 1.25rem; i { color: $primary-color; } } .permissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; .permission-item { .custom-checkbox { input[type="checkbox"] { opacity: 0; position: absolute; &:checked + label { .checkbox-icon { background-color: $primary-color; border-color: $primary-color; i { opacity: 1; transform: scale(1); } } } } label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; .checkbox-icon { width: 20px; height: 20px; border-radius: 4px; border: 1px solid $border-color; background-color: white; display: flex; align-items: center; justify-content: center; i { color: white; font-size: 0.75rem; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; } } } } } } }
+.permissions-container { background-color: #f3f6f9; border-radius: $border-radius; padding: 1.25rem; .permissions-title { display: flex; align-items: center; font-weight: 500; margin-bottom: 1.25rem; i { color: $primary-color; } } .permissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; .permission-item { .custom-radio { input[type="radio"] { opacity: 0; position: absolute; &:checked + label { .radio-icon { background-color: $primary-color; border-color: $primary-color; i { opacity: 1; transform: scale(1); } } } } label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; .radio-icon { width: 20px; height: 20px; border-radius: 50%; border: 1px solid $border-color; background-color: white; display: flex; align-items: center; justify-content: center; i { color: white; font-size: 0.6rem; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; } } } } } } }
 .form-actions { display: flex; justify-content: flex-end; padding-top: 1.5rem; .action-buttons { display: flex; gap: 1rem; .btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem 1.25rem; border-radius: $border-radius; font-weight: 500; transition: all 0.3s ease; &.btn-outline-secondary { color: $secondary-color; border: 1px solid #d4d6dd; &:hover { background-color: #f1f1f3; } } &.btn-primary { background: linear-gradient(to right, $primary-color, lighten($primary-color, 10%)); border: none; color: white; &:hover { transform: translateY(-2px); box-shadow: 0 0.25rem 0.5rem rgba($primary-color, 0.4); } } } } }
 .image-upload-container { .image-preview-area { text-align: center; .image-preview, .image-placeholder { width: 120px; height: 120px; border-radius: 50%; border: 2px dashed $border-color; margin: 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; img { width: 100%; height: 100%; object-fit: cover; } } } .upload-actions { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem; } }
 </style>

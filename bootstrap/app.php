@@ -17,16 +17,17 @@ return Application::configure(basePath: dirname(__DIR__))
             // Check if the matched route belongs to the admin group
             if ($request->route()) {
                 $action = $request->route()->getAction();
-                if ((isset($action['domain']) && str_contains($action['domain'], 'admin.')) || 
+                if ((isset($action['domain']) && str_contains($action['domain'], 'admin.')) ||
                     (isset($action['controller']) && str_contains($action['controller'], 'BackOffice'))) {
                     return route('auth.loginForm');
                 }
             }
-            
+
             // Fallback to host checking
             if (str_contains($request->getHost(), 'admin.')) {
                 return route('auth.loginForm');
             }
+
             return '/login';
         });
         $middleware->redirectUsersTo(fn () => route('dashboard.index'));

@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Doctor extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Uuid;
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $fillable = [
         'user_id',
@@ -42,11 +48,6 @@ class Doctor extends Model
     public function medicalService()
     {
         return $this->belongsTo(MedicalService::class, 'medical_service_id');
-    }
-
-    public function medicalServices()
-    {
-        return $this->belongsToMany(MedicalService::class, 'doctor_medical_service');
     }
 
     public function appointments()

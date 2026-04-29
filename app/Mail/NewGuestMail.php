@@ -27,7 +27,7 @@ class NewGuestMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Creating an account on Canaan Care Services',
+            subject: 'Création de compte - Centre Médical Canaan',
         );
     }
 

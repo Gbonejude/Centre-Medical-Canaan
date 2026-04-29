@@ -24,7 +24,7 @@ class ForgotPasswordMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Password Reset Request - Canaan Care Services',
+            subject: 'Demande de réinitialisation de mot de passe - Centre Medical Canaan',
         );
     }
 

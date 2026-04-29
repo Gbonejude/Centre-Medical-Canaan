@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\BackOffice\Hospital;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Specialty\StoreSpecialtyRequest;
+use App\Http\Requests\Specialty\UpdateSpecialtyRequest;
 use App\Models\Specialty;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Str;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class SpecialtyController extends Controller implements HasMiddleware
 {
@@ -25,7 +26,7 @@ class SpecialtyController extends Controller implements HasMiddleware
         $query = Specialty::query();
 
         if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         return Inertia::render('backoffice/specialties/index', [
@@ -39,13 +40,9 @@ class SpecialtyController extends Controller implements HasMiddleware
         return Inertia::render('backoffice/specialties/create');
     }
 
-    public function store(Request $request)
+    public function store(StoreSpecialtyRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:specialties,name',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         Specialty::create([
             'name' => $validated['name'],
@@ -57,23 +54,20 @@ class SpecialtyController extends Controller implements HasMiddleware
         return redirect()->route('specialties.index')->with('success', 'Spécialité créée avec succès.');
     }
 
-    public function edit($id)
+    public function edit($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
+
         return Inertia::render('backoffice/specialties/edit', [
-            'specialty' => $specialty
+            'specialty' => $specialty,
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateSpecialtyRequest $request, $uuid)
     {
-        $specialty = Specialty::findOrFail($id);
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:specialties,name,' . $specialty->id,
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $specialty->update([
             'name' => $validated['name'],
@@ -85,22 +79,23 @@ class SpecialtyController extends Controller implements HasMiddleware
         return redirect()->route('specialties.index')->with('success', 'Spécialité mise à jour avec succès.');
     }
 
-    public function destroy($id)
+    public function destroy($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
-        
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
+
         if ($specialty->doctors()->count() > 0) {
             return back()->with('error', 'Impossible de supprimer cette spécialité car elle est liée à des médecins.');
         }
 
         $specialty->delete();
+
         return back()->with('success', 'Spécialité supprimée avec succès.');
     }
 
-    public function toggleStatus($id)
+    public function toggleStatus($uuid)
     {
-        $specialty = Specialty::findOrFail($id);
-        $specialty->is_active = !$specialty->is_active;
+        $specialty = Specialty::where('uuid', $uuid)->firstOrFail();
+        $specialty->is_active = ! $specialty->is_active;
         $specialty->save();
 
         return back()->with('success', 'Statut mis à jour.');

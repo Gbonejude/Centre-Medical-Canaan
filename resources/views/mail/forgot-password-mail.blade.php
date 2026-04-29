@@ -1,25 +1,25 @@
 <x-mail::message>
-# Password Reset Request
+# Demande de réinitialisation de mot de passe
 
-Hello!
+Bonjour !
 
-We received a request to reset the password for your account at {{ config('app.name') }}.
+Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte sur {{ config('app.name') }}.
 
-**Email**: {{ $email }}
+**Email** : {{ $email }}
 
-Click the button below to reset your password:
+Cliquez sur le bouton ci-dessous pour réinitialiser votre mot de passe :
 
 <x-mail::button :url="$resetUrl">
-    Reset Password
+    Réinitialiser le mot de passe
 </x-mail::button>
 
-This password reset link will expire in **60 minutes**.
+Ce lien de réinitialisation expirera dans **60 minutes**.
 
-If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+Si vous n'avez pas demandé la réinitialisation de votre mot de passe, veuillez ignorer cet email. Votre mot de passe restera inchangé.
 
-For security reasons, please do not share this link with anyone.
+Pour des raisons de sécurité, veuillez ne partager ce lien avec personne.
 
-Thanks,<br>
+Cordialement,<br>
 <br>
-Service Support - {{ config('app.name') }}
+Support Client - {{ config('app.name') }}
 </x-mail::message>

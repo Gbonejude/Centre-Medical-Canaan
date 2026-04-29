@@ -11,9 +11,7 @@ class NewAppointmentRequestNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
-    public function __construct(public Appointment $appointment)
-    {
-    }
+    public function __construct(public Appointment $appointment) {}
 
     public function via($notifiable): array
     {
@@ -23,9 +21,12 @@ class NewAppointmentRequestNotification extends Notification implements ShouldQu
     public function toArray($notifiable): array
     {
         return [
-            'title' => 'Nouveau Rendez-vous',
-            'message' => 'Une nouvelle demande de rendez-vous a été soumise par ' . $this->appointment->patient->lastname . ' ' . $this->appointment->patient->firstname,
-            'url' => route('appointments.show', $this->appointment->id),
+            'title' => 'Nouvelle demande de rendez-vous',
+            'message' => $this->appointment->patient->firstname.' '.$this->appointment->patient->lastname
+                .' a soumis une demande de rendez-vous pour le '
+                .$this->appointment->appointment_date->format('d/m/Y')
+                .' à '.$this->appointment->appointment_time,
+            'url' => route('appointments.show', $this->appointment->uuid),
             'appointment_id' => $this->appointment->id,
         ];
     }

@@ -47,19 +47,19 @@
                                     </th>
                                     <th>
                                         <div class="table-header">
-                                            <span>Âge / Date de Naissance</span>
+                                            <span>Email</span>
                                         </div>
                                     </th>
                                     <th>
                                         <div class="table-header">
-                                            <span>Genre</span>
+                                            <span>Téléphone</span>
                                         </div>
                                     </th>
                                     <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody v-if="filteredPatients.length > 0">
-                                <tr v-for="patient in filteredPatients" :key="patient.id" class="user-row">
+                            <tbody v-if="pagedPatients.length > 0">
+                                <tr v-for="patient in pagedPatients" :key="patient.id" class="user-row">
                                     <td>
                                         <div class="user-info">
                                             <div class="user-avatar">
@@ -70,26 +70,22 @@
                                                 <div class="user-name">
                                                     {{ patient.user.lastname }} {{ patient.user.firstname }}
                                                 </div>
-                                                <div class="user-email text-muted small">
-                                                    {{ patient.user.phone || patient.user.email }}
-                                                </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="dob-info">
-                                            <span class="age-value">{{ calculateAge(patient.date_of_birth) }} ans</span>
-                                            <div class="text-muted small">{{ formatDate(patient.date_of_birth) }}</div>
-                                        </div>
+                                        <span class="text-muted small">
+                                            {{ patient.user.email }}
+                                        </span>
                                     </td>
                                     <td>
-                                        <span class="gender-badge" :class="patient.gender?.toLowerCase()">
-                                            {{ translateGender(patient.gender) }}
+                                        <span class="text-muted small">
+                                            {{ patient.user.phone || '—' }}
                                         </span>
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <Link :href="route('patients.show', patient.id)"
+                                            <Link :href="route('patients.show', patient.uuid)"
                                                 class="btn btn-sm btn-outline-info" title="Voir dossier">
                                                 <i class="fa fa-file-medical"></i>
                                             </Link>
@@ -103,7 +99,7 @@
                             </tbody>
                             <tbody v-else>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5">
+                                    <td colspan="6" class="text-center py-5">
                                         <div class="empty-state">
                                             <i class="fa fa-users fa-3x mb-3 text-muted"></i>
                                             <p>Aucun patient trouvé.</p>
@@ -115,7 +111,41 @@
                     </div>
 
                     
-                    <div class="pagination-info p-3 text-muted small" v-if="searchQuery && filteredPatients.length < props.patients.length">
+                    <div class="pagination-container" v-if="totalPages > 1">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                <li :class="['page-item', { disabled: currentPage === 1 }]">
+                                    <a v-if="currentPage > 1" href="#" class="page-link" @click.prevent="goToPage(currentPage - 1)">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                    <span v-else class="page-link"><i class="fa fa-chevron-left"></i></span>
+                                </li>
+
+                                <li v-for="page in paginationRange" :key="page"
+                                    :class="['page-item', { active: page === currentPage }]">
+                                    <a v-if="page !== '...'" href="#" class="page-link" @click.prevent="goToPage(page)">
+                                        {{ page }}
+                                    </a>
+                                    <span v-else class="page-ellipsis">...</span>
+                                </li>
+
+                                <li :class="['page-item', { disabled: currentPage === totalPages }]">
+                                    <a v-if="currentPage < totalPages" href="#" class="page-link" @click.prevent="goToPage(currentPage + 1)">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                    <span v-else class="page-link"><i class="fa fa-chevron-right"></i></span>
+                                </li>
+                            </ul>
+                        </nav>
+                        <div class="pagination-info">
+                            Affichage de <span class="fw-medium">{{ (currentPage - 1) * perPage + 1 }}</span>
+                            à
+                            <span class="fw-medium">{{ Math.min(currentPage * perPage, filteredPatients.length) }}</span> sur
+                            <span class="fw-medium">{{ filteredPatients.length }}</span> entrées
+                        </div>
+                    </div>
+
+                    <div class="pagination-info p-3 text-muted small" v-else-if="searchQuery && filteredPatients.length < props.patients.length">
                         {{ filteredPatients.length }} résultat(s) sur {{ props.patients.length }} patients
                     </div>
                 </div>
@@ -125,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
 import Swal from 'sweetalert2';
@@ -146,6 +176,47 @@ const filteredPatients = computed(() => {
         const phone = (p.user?.phone ?? '').toLowerCase();
         return fullName.includes(q) || email.includes(q) || phone.includes(q);
     });
+});
+
+const currentPage = ref(1);
+const perPage = ref(10);
+
+watch(searchQuery, () => {
+    currentPage.value = 1;
+});
+
+function goToPage(pageNum) {
+    currentPage.value = pageNum;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const totalPages = computed(() => Math.ceil(filteredPatients.value.length / perPage.value));
+
+const pagedPatients = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value;
+    const end = start + perPage.value;
+    return filteredPatients.value.slice(start, end);
+});
+
+const paginationRange = computed(() => {
+    const lastPage = totalPages.value;
+    if (lastPage <= 7) {
+        return Array.from({ length: lastPage }, (_, i) => i + 1);
+    }
+
+    const current = currentPage.value;
+    let range = [];
+    range.push(1);
+
+    if (current <= 3) {
+        range.push(2, 3, 4, 5, '...', lastPage);
+    } else if (current >= lastPage - 2) {
+        range.push('...', lastPage - 4, lastPage - 3, lastPage - 2, lastPage - 1, lastPage);
+    } else {
+        range.push('...', current - 1, current, current + 1, '...', lastPage);
+    }
+
+    return range;
 });
 
 function formatDate(date) {
@@ -180,7 +251,7 @@ function confirmDelete(patient) {
         reverseButtons: true
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('patients.destroy', patient.id), {
+            router.delete(route('patients.destroy', patient.uuid), {
                 onSuccess: () => {
                     toast.success('Dossier patient supprimé');
                 },
