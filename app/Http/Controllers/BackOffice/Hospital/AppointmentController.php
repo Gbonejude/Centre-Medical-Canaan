@@ -7,6 +7,8 @@ use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\MedicalService;
 use App\Models\User;
+use App\Http\Requests\Hospital\StoreAppointmentRequest;
+use App\Http\Requests\Hospital\UpdateAppointmentFrontRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,7 +26,7 @@ class AppointmentController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $user = auth()->user();
-        $isDoctor = $user->hasRole('DOCTOR') && !$user->hasAnyRole(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctor = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         $query = Appointment::with(['patient', 'doctor', 'medicalService']);
 
@@ -64,14 +66,9 @@ class AppointmentController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAppointmentRequest $request)
     {
-        $validated = $request->validate([
-            'medical_service_id' => 'required|exists:medical_services,id',
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required',
-            'reason' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $appointment = Appointment::create([
             'patient_id' => auth()->id() ?? auth()->guard('guest')->id(),
@@ -131,7 +128,7 @@ class AppointmentController extends Controller implements HasMiddleware
     public function show(Appointment $appointment)
     {
         $user = auth()->user();
-        $isDoctor = $user->hasRole('DOCTOR') && !$user->hasAnyRole(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
+        $isDoctor = $user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
 
         $appointment->load(['patient', 'doctor', 'medicalService']);
         return Inertia::render('backoffice/appointments/show', [
@@ -219,7 +216,7 @@ class AppointmentController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function updateFront(Request $request, Appointment $appointment)
+    public function updateFront(UpdateAppointmentFrontRequest $request, Appointment $appointment)
     {
         $user = auth('guest')->user();
 
@@ -231,12 +228,7 @@ class AppointmentController extends Controller implements HasMiddleware
             return back()->with('error', 'Seuls les rendez-vous en attente peuvent être modifiés.');
         }
 
-        $validated = $request->validate([
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required',
-            'medical_service_id' => 'required|exists:medical_services,id',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $appointment->update($validated);
 

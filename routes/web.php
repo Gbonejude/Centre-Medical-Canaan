@@ -122,8 +122,8 @@ Route::group(['domain' => 'admin.'.$domain], function () {
         Route::post('appointments/{appointment}/confirm', [AppointmentController::class, 'assignDoctor'])->name('appointments.confirm');
         Route::put('appointments/{appointment}/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
 
-        Route::get('planning', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
-        Route::get('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
-        Route::put('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');
+        Route::get('availabilities', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
+        Route::get('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
+        Route::put('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');
     });
 });

@@ -1,6 +1,6 @@
 <template>
     <Head>
-        <title>Planning des Médecins | CMC</title>
+        <title>Disponibilités des Médecins | CMC</title>
     </Head>
 
     <div class="content-wrapper">
@@ -10,7 +10,7 @@
                     <div class="header-title">
                         <h4 class="page-title">
                             <i class="fa fa-calendar-alt me-2"></i>
-                            Planning & Disponibilités
+                            Disponibilités & Horaires
                         </h4>
                         <p class="text-muted">Configurez les horaires de travail de l'équipe médicale</p>
                     </div>

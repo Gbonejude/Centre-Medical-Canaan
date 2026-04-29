@@ -79,20 +79,20 @@
                     <!-- Planning des Médecins (Admin & Réceptionniste) -->
                     <li
                         v-if="userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
-                        :class="{ active: isActiveLink('/planning') }"
+                        :class="{ active: isActiveLink('/availabilities') }"
                     >
                         <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
-                            <i class="fa fa-calendar-day"></i><span>Planning</span>
+                            <i class="fa fa-calendar-day"></i><span>Disponibilités</span>
                         </Link>
                     </li>
 
                     <!-- Mon Planning (Médecin Uniquement) -->
                     <li
                         v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
-                        :class="{ active: isActiveLink('/planning') }"
+                        :class="{ active: isActiveLink('/availabilities') }"
                     >
                         <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
-                            <i class="fa fa-calendar-alt"></i><span>Mon Planning</span>
+                            <i class="fa fa-calendar-alt"></i><span>Mes Disponibilités</span>
                         </Link>
                     </li>
 

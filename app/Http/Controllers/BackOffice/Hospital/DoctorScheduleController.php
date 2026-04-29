@@ -21,14 +21,14 @@ class DoctorScheduleController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $user = auth()->user();
-        if ($user->hasRole('DOCTOR')) {
+        if ($user->hasPermissionTo('DOCTOR') && !$user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST'])) {
             $doctor = Doctor::where('user_id', $user->id)->first();
             if ($doctor) {
                 return redirect()->route('schedules.edit', $doctor->uuid);
             }
         }
 
-        $query = Doctor::with(['user', 'medicalServices', 'specialties']);
+        $query = Doctor::with(['user', 'medicalService', 'specialty']);
 
         if ($request->search) {
             $query->whereHas('user', function($q) use ($request) {
@@ -46,12 +46,12 @@ class DoctorScheduleController extends Controller implements HasMiddleware
     public function edit($uuid)
     {
         $doctor = Doctor::with('user')->where('uuid', $uuid)->firstOrFail();
-        
+
         // Sécurité : Un docteur ne peut éditer que son propre planning
-        if (auth()->user()->hasRole('DOCTOR') && $doctor->user_id !== auth()->id()) {
+        if (auth()->user()->hasPermissionTo('DOCTOR') && !auth()->user()->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']) && $doctor->user_id !== auth()->id()) {
             abort(403, "Vous n'êtes pas autorisé à modifier le planning d'un autre médecin.");
         }
-        
+
         // Initialiser l'availability si vide
         $defaultAvailability = [
             'monday'    => ['enabled' => true, 'slots' => [['start' => '08:00', 'end' => '17:00']]],
@@ -74,7 +74,7 @@ class DoctorScheduleController extends Controller implements HasMiddleware
     public function update(Request $request, $uuid)
     {
         $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
-        
+
         $validated = $request->validate([
             'availability' => 'required|array',
         ]);

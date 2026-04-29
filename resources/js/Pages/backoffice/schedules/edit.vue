@@ -8,7 +8,7 @@
             <div class="navigation-links">
                 <Link :href="route('schedules.index')" class="back-link">
                     <i class="fa fa-arrow-left"></i>
-                    <span>Retour au Planning</span>
+                    <span>Retour aux Disponibilités</span>
                 </Link>
             </div>
 
@@ -67,7 +67,7 @@
                                 </Link>
                                 <button type="submit" class="btn btn-primary" :disabled="form.processing">
                                     <i class="fa fa-save me-2"></i>
-                                    {{ form.processing ? 'Enregistrement...' : 'Enregistrer le Planning' }}
+                                    {{ form.processing ? 'Enregistrement...' : 'Enregistrer les Disponibilités' }}
                                 </button>
                             </div>
                         </div>
@@ -114,7 +114,7 @@ function removeSlot(dayKey, index) {
 function saveSchedule() {
     form.put(route('schedules.update', props.doctor.uuid), {
         onSuccess: () => {
-            toast.success('Planning mis à jour avec succès');
+            toast.success('Disponibilités mises à jour avec succès');
         }
     });
 }

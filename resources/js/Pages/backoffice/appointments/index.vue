@@ -43,7 +43,7 @@
                             </div>
 
                             <!-- Filtre Docteur (Multi-select) -->
-                            <div class="filter-item dropdown">
+                            <div v-if="!isDoctor" class="filter-item dropdown">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="doctorFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                                     {{ doctorFilter.length > 0 ? (doctorFilter.length === 1 ? '1 médecin' : doctorFilter.length + ' médecins') : 'Tous les médecins' }}
                                 </button>

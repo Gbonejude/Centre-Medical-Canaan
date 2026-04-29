@@ -131,7 +131,7 @@
                             <i class="fas fa-hospital-symbol"></i> Gérer les Services
                         </button>
                         <button @click="$inertia.visit(route('schedules.index'))" class="action-btn">
-                            <i class="fas fa-calendar-alt"></i> Consulter le Planning
+                            <i class="fas fa-calendar-alt"></i> Gérer les Disponibilités
                         </button>
                     </div>
                 </div>
