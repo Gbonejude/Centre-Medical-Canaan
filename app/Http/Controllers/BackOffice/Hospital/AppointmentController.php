@@ -56,17 +56,32 @@ class AppointmentController extends Controller implements HasMiddleware
 
     public function create(Request $request)
     {
+        $bookedSlots = Appointment::whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->whereDate('appointment_date', '>=', now()->toDateString())
+            ->get(['appointment_date', 'appointment_time', 'medical_service_id']);
+
         return Inertia::render('frontoffice/appointments/create', [
             'services' => MedicalService::where('is_active', true)->orderBy('name')->get(),
             'selectedServiceId' => $request->query('service_id'),
             'selectedDate' => $request->query('date'),
             'selectedTime' => $request->query('time'),
+            'bookedSlots' => $bookedSlots,
         ]);
     }
 
     public function store(StoreAppointmentRequest $request)
     {
         $validated = $request->validated();
+
+        $isBooked = Appointment::where('medical_service_id', $validated['medical_service_id'])
+            ->where('appointment_date', $validated['appointment_date'])
+            ->where('appointment_time', $validated['appointment_time'])
+            ->whereIn('status', ['PENDING', 'CONFIRMED'])
+            ->exists();
+
+        if ($isBooked) {
+            return back()->with('error', 'Ce créneau horaire est déjà réservé pour ce service. Veuillez choisir une autre heure.');
+        }
 
         $appointment = Appointment::create([
             'patient_id' => auth()->id() ?? auth()->guard('guest')->id(),
