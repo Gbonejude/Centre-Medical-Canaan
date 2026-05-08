@@ -21,21 +21,10 @@
                                 <img :src="patient.user.avatar_url || '/assets/img/user.jpg'" alt="Profil" />
                             </div>
                             <h3 class="mt-4 mb-1">{{ patient.user.firstname }} {{ patient.user.lastname }}</h3>
-                            <p class="text-muted mb-3">ID Patient: #PAT-{{ patient.id }}</p>
-                            
-                            <div class="badge-container mb-4">
-                                <span class="gender-badge" :class="patient.gender?.toLowerCase()">
-                                    {{ translateGender(patient.gender) }}
-                                </span>
-                            </div>
 
                             <div class="patient-quick-stats pt-4 border-top">
                                 <div class="row g-0">
-                                    <div class="col-6 border-end">
-                                        <div class="stat-label">Âge</div>
-                                        <div class="stat-value">{{ calculateAge(patient.date_of_birth) }} ans</div>
-                                    </div>
-                                    <div class="col-6">
+                                    <div class="col-12">
                                         <div class="stat-label">RDVs</div>
                                         <div class="stat-value">{{ patient.appointments?.length || 0 }}</div>
                                     </div>
@@ -67,10 +56,7 @@
                         </div>
                         <div class="card-body">
                             <div class="detail-section">
-                                <div class="detail-item">
-                                    <div class="detail-label">Date de Naissance</div>
-                                    <div class="detail-value">{{ formatDate(patient.date_of_birth) }}</div>
-                                </div>
+
                                 <div class="detail-item">
                                     <div class="detail-label">Téléphone</div>
                                     <div class="detail-value">{{ patient.user.phone || '—' }}</div>

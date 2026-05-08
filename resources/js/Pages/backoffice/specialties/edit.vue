@@ -85,7 +85,7 @@ const form = useForm({
 });
 
 function update() {
-    form.put(route("specialties.update", props.specialty.id), {
+    form.put(route("specialties.update", props.specialty.uuid), {
         onSuccess: () => toast.success('Spécialité mise à jour avec succès'),
     });
 }

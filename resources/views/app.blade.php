@@ -24,6 +24,13 @@
   @vite(['resources/css/app.css', 'resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
   @routes
   @inertiaHead
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        registrations.forEach(function(registration) { registration.unregister(); });
+      });
+    }
+  </script>
 </head>
 
 <body>

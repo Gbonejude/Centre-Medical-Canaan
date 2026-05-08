@@ -1,15 +1,15 @@
 <x-mail::message>
-# Hello {{ $firstname }} {{ $lastname }}!
+# Bonjour {{ $firstname }} {{ $lastname }} !
 
-Welcome to {{ config('app.name') }}!
+Bienvenue sur {{ config('app.name') }} !
 
-Your account has been successfully created. <br>
+Votre compte a été créé avec succès. <br>
 
-You can now access your account and explore all the features available to you.
+Vous pouvez dès à présent vous connecter et accéder à toutes nos fonctionnalités.
 
-Thank you for choosing Canaan Care Services. If you have any questions, please contact our support team.
+Merci d'avoir choisi le Centre Medical Canaan. Si vous avez des questions, n'hésitez pas à contacter notre équipe support.
 
-Thanks,<br>
+Cordialement,<br>
 <br>
-Service Support - {{ config('app.name') }}
+Support Client - {{ config('app.name') }}
 </x-mail::message>

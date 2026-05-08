@@ -9,11 +9,11 @@ $modelsToDelete = [
     'JobOffer.php', 'JobOfferResponse.php', 'JobOfferSchedule.php', 'Lesson.php', 'Module.php', 'Payment.php',
     'PayrollBatch.php', 'PayrollHourOverride.php', 'PayrollNote.php', 'PayrollRecord.php', 'Question.php',
     'QuizAttempt.php', 'Quizze.php', 'Rate.php', 'TimeOff.php', 'Timesheet.php', 'ToPayrollBatch.php',
-    'ToPayrollRecord.php', 'Unpaid.php'
+    'ToPayrollRecord.php', 'Unpaid.php',
 ];
 
 foreach ($modelsToDelete as $file) {
-    @unlink('app/Models/' . $file);
+    @unlink('app/Models/'.$file);
 }
 
 $controllersToDelete = [

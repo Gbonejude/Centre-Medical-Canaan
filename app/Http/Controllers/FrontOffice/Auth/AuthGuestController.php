@@ -8,8 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginGuestRequest;
 use App\Http\Requests\Guest\StoreRequest;
 use App\Mail\NewGuestMail;
-use App\Models\User;
 use App\Models\Patient;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,7 +36,7 @@ final class AuthGuestController extends Controller
         DB::beginTransaction();
         try {
             $validated = $request->validated();
-            
+
             // Create the User record
             $user = User::create([
                 'uuid' => (string) Str::uuid(),
@@ -48,8 +48,8 @@ final class AuthGuestController extends Controller
                 'active' => $validated['active'] ?? true,
             ]);
 
-            // Assign the PATIENT role
-            $user->assignRole('PATIENT');
+            // Assign the PATIENT permission
+            $user->givePermissionTo('PATIENT');
 
             // Create the Patient profile record
             Patient::create([
@@ -58,19 +58,18 @@ final class AuthGuestController extends Controller
 
             DB::commit();
 
-            Auth::guard('guest')->login($user);
+            Mail::to($user->email)->queue(new NewGuestMail($user->firstname, $user->lastname));
 
-            Mail::to($user->email)->send(new NewGuestMail($user->firstname, $user->lastname));
-
-            return redirect()->intended(route('home.index'))
-                ->with('success', 'Votre compte a été créé avec succès.');
+            return redirect()->route('auth.guest.login.form')
+                ->with('success', 'Votre compte a été créé avec succès. Veuillez vous connecter.');
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()
                 ->back()
                 ->withInput($request->except('password', 'password_confirmation'))
-                ->with('error', 'Une erreur est survenue lors de la création de votre compte : ' . $e->getMessage());
+                ->with('error', 'Une erreur est survenue lors de la création de votre compte : '.$e->getMessage());
         }
     }
 
@@ -108,7 +107,7 @@ final class AuthGuestController extends Controller
         $request->session()->regenerate();
 
         return redirect()
-            ->intended(route('home.index'));
+            ->route('home.index');
     }
 
     /**

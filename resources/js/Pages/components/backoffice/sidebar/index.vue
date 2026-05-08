@@ -76,13 +76,23 @@
                         </Link>
                     </li>
 
-                    <!-- Planning des Médecins (Admin & Réceptionniste) -->
+                    <!-- Planning Global (Admin & Réceptionniste) -->
                     <li
                         v-if="userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
                         :class="{ active: isActiveLink('/planning') }"
                     >
+                        <Link :href="route('planning.index')" @click="closeSidebarOnMobile">
+                            <i class="fa fa-calendar-alt"></i><span>Planning</span>
+                        </Link>
+                    </li>
+
+                    <!-- Disponibilités des Médecins (Admin & Réceptionniste) -->
+                    <li
+                        v-if="userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
+                        :class="{ active: isActiveLink('/availabilities') }"
+                    >
                         <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
-                            <i class="fa fa-calendar-day"></i><span>Planning</span>
+                            <i class="fa fa-calendar-day"></i><span>Disponibilités</span>
                         </Link>
                     </li>
 
@@ -91,8 +101,18 @@
                         v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
                         :class="{ active: isActiveLink('/planning') }"
                     >
-                        <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
+                        <Link :href="route('planning.index')" @click="closeSidebarOnMobile">
                             <i class="fa fa-calendar-alt"></i><span>Mon Planning</span>
+                        </Link>
+                    </li>
+
+                    <!-- Mes Disponibilités (Médecin Uniquement) -->
+                    <li
+                        v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
+                        :class="{ active: isActiveLink('/availabilities') }"
+                    >
+                        <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
+                            <i class="fa fa-calendar-day"></i><span>Mes Disponibilités</span>
                         </Link>
                     </li>
 

@@ -1,7 +1,7 @@
 <template>
     <Head>
-        <title>Notifications | CCS</title>
-        <meta name="description" content="View all your notifications" />
+        <title>Notifications | CMC</title>
+        <meta name="description" content="Voir toutes vos notifications" />
     </Head>
 
     <div class="content-wrapper">
@@ -14,18 +14,18 @@
                             <i class="far fa-bell me-2"></i>
                             Notifications
                         </h4>
-                        <p class="text-muted">Stay updated with your latest alerts and activities</p>
+                        <p class="text-muted">Restez informé de vos dernières alertes et activités</p>
                     </div>
                     <div class="header-actions">
                         <div class="search-container">
-                            <input type="text" v-model="searchQuery" placeholder="Search notifications..." class="form-control" />
+                            <input type="text" v-model="searchQuery" placeholder="Rechercher des notifications..." class="form-control" />
                             <i class="fa fa-search search-icon"></i>
                         </div>
 
                         <button v-if="notifications.total > 0" @click="markAllAsRead" 
                             class="btn btn-primary btn-add">
                             <i class="fas fa-check-double me-1"></i>
-                            <span>Mark all as read</span>
+                            <span>Tout marquer comme lu</span>
                         </button>
                     </div>
                 </div>
@@ -63,15 +63,15 @@
                                     <div class="main-actions d-flex gap-2">
                                         <Link v-if="notification.data.url" :href="formatUrl(notification.data.url)" 
                                             class="btn btn-premium btn-view" @click="handleNotificationClick(notification)">
-                                            <i class="fas fa-external-link-alt me-2"></i> View
+                                            <i class="fas fa-external-link-alt me-2"></i> Voir
                                         </Link>
                                         <button v-if="!notification.read_at" @click="markAsRead(notification.id)" 
                                             class="btn btn-premium btn-mark">
-                                            <i class="fas fa-check me-2"></i> Mark read
+                                            <i class="fas fa-check me-2"></i> Marquer comme lu
                                         </button>
                                     </div>
                                     <button @click="deleteNotification(notification.id)" 
-                                        class="btn-delete-ghost" title="Remove notification">
+                                        class="btn-delete-ghost" title="Supprimer la notification">
                                         <i class="far fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -106,10 +106,10 @@
                         </ul>
                     </nav>
                     <div class="pagination-info text-muted small">
-                        Showing <span class="fw-bold text-dark">{{ (notifications.current_page - 1) * notifications.per_page + 1 }}</span>
-                        to
-                        <span class="fw-bold text-dark">{{ Math.min(notifications.current_page * notifications.per_page, notifications.total) }}</span> of
-                        <span class="fw-bold text-dark">{{ notifications.total }}</span> entries
+                        Affichage de <span class="fw-bold text-dark">{{ (notifications.current_page - 1) * notifications.per_page + 1 }}</span>
+                        à
+                        <span class="fw-bold text-dark">{{ Math.min(notifications.current_page * notifications.per_page, notifications.total) }}</span> sur
+                        <span class="fw-bold text-dark">{{ notifications.total }}</span> entrées
                     </div>
                 </div>
             </div>
@@ -118,10 +118,10 @@
                 <div class="empty-icon-box mb-4 mx-auto">
                     <i class="far fa-bell-slash"></i>
                 </div>
-                <h3 class="fw-bold text-dark">All Caught Up!</h3>
-                <p class="text-muted mx-auto" style="max-width: 300px;">You've handled all your notifications. Great job!</p>
+                <h3 class="fw-bold text-dark">Tout est à jour !</h3>
+                <p class="text-muted mx-auto" style="max-width: 300px;">Vous avez traité toutes vos notifications. Bon travail !</p>
                 <Link :href="route('dashboard.index')" class="btn btn-primary px-5 py-3 rounded-pill fw-bold mt-4 shadow-sm">
-                    Go to Dashboard
+                    Aller au Tableau de Bord
                 </Link>
             </div>
         </div>
@@ -219,8 +219,8 @@ const getNotificationTitle = (notification) => {
     if (notification.data.title) return notification.data.title;
     
     switch (notification.data.type) {
-        case 'mention': return 'Mentioned';
-        case 'permission': return 'Community';
+        case 'mention': return 'Mentionné';
+        case 'permission': return 'Communauté';
         case 'message': return 'Message';
         default: return 'Notification';
     }
@@ -235,7 +235,7 @@ const handleNotificationClick = (notification) => {
 const markAsRead = (id, redirect = true) => {
     router.post(route('notifications.markAsRead', id), {}, {
         onSuccess: () => {
-            if (redirect) toast.success('Marked as read');
+            if (redirect) toast.success('Marquée comme lue');
         }
     });
 };
@@ -243,19 +243,19 @@ const markAsRead = (id, redirect = true) => {
 const markAllAsRead = () => {
     router.post(route('notifications.markAllAsRead'), {}, {
         onSuccess: () => {
-            toast.success('All notifications marked as read');
+            toast.success('Toutes les notifications ont été marquées comme lues');
         }
     });
 };
 
 const deleteNotification = (id) => {
     Swal.fire({
-        title: "Confirm Deletion",
-        text: "Are you sure you want to permanently delete this notification? This action cannot be undone.",
+        title: "Confirmer la suppression",
+        text: "Êtes-vous sûr de vouloir supprimer définitivement cette notification ? Cette action est irréversible.",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Yes, delete it",
-        cancelButtonText: "Cancel",
+        confirmButtonText: "Oui, supprimer",
+        cancelButtonText: "Annuler",
         confirmButtonColor: "#dc3545",
         cancelButtonColor: "#6c757d",
         reverseButtons: true,
@@ -264,7 +264,7 @@ const deleteNotification = (id) => {
         if (result.isConfirmed) {
             router.delete(route('notifications.destroy', id), {
                 onSuccess: () => {
-                    toast.success('Notification removed');
+                    toast.success('Notification supprimée');
                 }
             });
         }

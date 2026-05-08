@@ -1,6 +1,6 @@
 <template>
     <Head>
-        <title>Login</title>
+        <title>Connexion</title>
     </Head>
     <section class="login-section">
         <div class="login-box">
@@ -10,7 +10,7 @@
             </div>
             <form @submit.prevent="login">
                 <div class="mb-3">
-                    <input type="email" class="form-control" id="email" autofocus="" placeholder="Email Address"
+                    <input type="email" class="form-control" id="email" autofocus="" placeholder="Adresse E-mail"
                         v-model="loginForm.email" :disabled="loginForm.processing">
                     <div v-if="errors.email"><span class="text-danger">{{ errors.email[0] }}</span>
                     </div>
@@ -18,7 +18,7 @@
                 <div class="mb-3">
                     <div class="password-wrapper">
                         <input :type="showPassword ? 'text' : 'password'" class="form-control" id="password"
-                            placeholder="Password" v-model="loginForm.password" :disabled="loginForm.processing">
+                            placeholder="Mot de passe" v-model="loginForm.password" :disabled="loginForm.processing">
                         <button type="button" class="password-toggle" @click="togglePassword" :disabled="loginForm.processing">
                             <i :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
                         </button>
@@ -28,14 +28,14 @@
                     </div>
                     <div class="text-end mt-2">
                         <Link :href="route('auth.password.forgot.form')" class="forgot-password">
-                            Forgot Password?
+                            Mot de passe oublié ?
                         </Link>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-green w-100" :disabled="loginForm.processing">
                     <span v-if="loginForm.processing" class="loader-content">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                            <span class="visually-hidden">Chargement...</span>
                         </div>
                         Connexion ...
                     </span>

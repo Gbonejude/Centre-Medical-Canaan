@@ -1,21 +1,21 @@
 <template>
   <Head>
-    <title>Edit Profile</title>
+    <title>Modifier le Profil | CMC</title>
   </Head>
   <div class="content container-fluid">
     <!-- Page Header -->
     <div class="page-header">
       <div class="row align-items-center">
         <div class="col">
-          <h3 class="page-title">Edit Profile</h3>
+          <h3 class="page-title">Modifier le Profil</h3>
           <ul class="breadcrumb">
             <li class="breadcrumb-item">
-              <Link :href="route('dashboard.index')">Dashboard</Link>
+              <Link :href="route('dashboard.index')">Tableau de bord</Link>
             </li>
             <li class="breadcrumb-item">
-              <Link :href="route('profile.index')">Profile</Link>
+              <Link :href="route('profile.index')">Profil</Link>
             </li>
-            <li class="breadcrumb-item active">Edit</li>
+            <li class="breadcrumb-item active">Modifier</li>
           </ul>
         </div>
       </div>
@@ -26,15 +26,15 @@
         <!-- Profile Information Form -->
         <div class="card mb-4">
           <div class="card-header">
-            <h5 class="card-title">Profile Information</h5>
-            <p class="card-subtitle text-muted">Update your account's profile information and avatar.</p>
+            <h5 class="card-title">Informations du Profil</h5>
+            <p class="card-subtitle text-muted">Mettez à jour vos informations personnelles et votre photo de profil.</p>
           </div>
           <div class="card-body">
             <form @submit.prevent="updateProfile">
               <!-- Profile Picture Section -->
               <div class="row g-3 mb-4">
                 <div class="col-12">
-                  <label class="form-label">Profile Picture</label>
+                  <label class="form-label">Photo de Profil</label>
                   <div class="profile-picture-section">
                     <div class="current-avatar">
                       <!-- Afficher l'image actuelle si disponible -->
@@ -62,7 +62,7 @@
                       />
                       <button type="button" @click="triggerFileInput" class="btn btn-outline-primary btn-sm">
                         <i class="fa fa-camera"></i>
-                        {{ imagePreview || user.avatar_url ? 'Change Picture' : 'Upload Picture' }}
+                        {{ imagePreview || user.avatar_url ? 'Changer la photo' : 'Télécharger une photo' }}
                       </button>
                       <button
                         v-if="(imagePreview || user.avatar_url) && !profileForm.remove_image"
@@ -70,21 +70,21 @@
                         @click="removeImage"
                         class="btn btn-outline-danger btn-sm">
                         <i class="fa fa-trash"></i>
-                        Remove
+                        Supprimer
                       </button>
                     </div>
                   </div>
                   <div v-if="profileForm.errors.image" class="invalid-feedback d-block">
                     {{ profileForm.errors.image }}
                   </div>
-                  <small class="text-muted">JPG, PNG or GIF. Max size 2MB.</small>
+                  <small class="text-muted">JPG, PNG ou GIF. Taille max 2Mo.</small>
                 </div>
               </div>
 
               <div class="row g-3">
                 <!-- First Name -->
                 <div class="col-md-6">
-                  <label for="firstname" class="form-label">First Name</label>
+                  <label for="firstname" class="form-label">Prénom</label>
                   <input
                     type="text"
                     id="firstname"
@@ -99,7 +99,7 @@
 
                 <!-- Last Name -->
                 <div class="col-md-6">
-                  <label for="lastname" class="form-label">Last Name</label>
+                  <label for="lastname" class="form-label">Nom</label>
                   <input
                     type="text"
                     id="lastname"
@@ -114,7 +114,7 @@
 
                 <!-- Username -->
                 <div class="col-md-6">
-                  <label for="username" class="form-label">Username</label>
+                  <label for="username" class="form-label">Nom d'utilisateur</label>
                   <input
                     type="text"
                     id="username"
@@ -129,7 +129,7 @@
 
                 <!-- Email -->
                 <div class="col-md-6">
-                  <label for="email" class="form-label">Email</label>
+                  <label for="email" class="form-label">Adresse E-mail</label>
                   <input
                     type="email"
                     id="email"
@@ -144,7 +144,7 @@
 
                 <!-- Phone -->
                 <div class="col-md-6">
-                  <label for="phone" class="form-label">Phone</label>
+                  <label for="phone" class="form-label">Téléphone</label>
                   <input
                     type="text"
                     id="phone"
@@ -157,19 +157,18 @@
                   </div>
                 </div>
 
-                <!-- Gender -->
+                <!-- Sexe -->
                 <div class="col-md-6">
-                  <label for="gender" class="form-label">Gender</label>
+                  <label for="gender" class="form-label">Sexe</label>
                   <select
                     id="gender"
                     v-model="profileForm.gender"
                     class="form-select"
                     :class="{ 'is-invalid': profileForm.errors.gender }"
                   >
-                    <option value="">Select gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="">Sélectionner le sexe</option>
+                    <option value="male">Homme</option>
+                    <option value="female">Femme</option>
                   </select>
                   <div v-if="profileForm.errors.gender" class="invalid-feedback">
                     {{ profileForm.errors.gender }}
@@ -185,9 +184,9 @@
                 >
                   <span v-if="profileForm.processing">
                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    Saving...
+                    Enregistrement...
                   </span>
-                  <span v-else>Save</span>
+                  <span v-else>Enregistrer</span>
                 </button>
               </div>
             </form>
@@ -197,15 +196,15 @@
         <!-- Change Password Form -->
         <div class="card mb-4">
           <div class="card-header">
-            <h5 class="card-title">Change Password</h5>
-            <p class="card-subtitle text-muted">Ensure your account is using a secure password.</p>
+            <h5 class="card-title">Changer le mot de passe</h5>
+            <p class="card-subtitle text-muted">Assurez-vous que votre compte utilise un mot de passe sécurisé.</p>
           </div>
           <div class="card-body">
             <form @submit.prevent="updatePassword">
               <div class="row g-3">
                 <!-- Current Password -->
                 <div class="col-md-12">
-                  <label for="current_password" class="form-label">Current Password</label>
+                  <label for="current_password" class="form-label">Mot de passe actuel</label>
                   <input
                     type="password"
                     id="current_password"
@@ -220,7 +219,7 @@
 
                 <!-- New Password -->
                 <div class="col-md-6">
-                  <label for="password" class="form-label">New Password</label>
+                  <label for="password" class="form-label">Nouveau mot de passe</label>
                   <input
                     type="password"
                     id="password"
@@ -235,7 +234,7 @@
 
                 <!-- Confirm Password -->
                 <div class="col-md-6">
-                  <label for="password_confirmation" class="form-label">Confirm Password</label>
+                  <label for="password_confirmation" class="form-label">Confirmer le mot de passe</label>
                   <input
                     type="password"
                     id="password_confirmation"
@@ -253,9 +252,9 @@
                 >
                   <span v-if="passwordForm.processing">
                     <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    Updating...
+                    Mise à jour...
                   </span>
-                  <span v-else>Update Password</span>
+                  <span v-else>Mettre à jour le mot de passe</span>
                 </button>
               </div>
             </form>
@@ -268,7 +267,7 @@
             :href="route('profile.index')"
             class="btn btn-light"
           >
-            <i class="fa fa-arrow-left me-1"></i> Back to Profile
+            <i class="fa fa-arrow-left me-1"></i> Retour au profil
           </Link>
         </div>
       </div>
@@ -319,7 +318,7 @@ function handleFileUpload(event) {
   if (file) {
     // Validation
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size must be less than 2MB', {
+      toast.error('La taille de l\'image doit être inférieure à 2Mo', {
         position: "top-right",
         timeout: 5000,
       });
@@ -328,7 +327,7 @@ function handleFileUpload(event) {
     }
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file', {
+      toast.error('Veuillez sélectionner un fichier image valide', {
         position: "top-right",
         timeout: 5000,
       });
@@ -339,7 +338,7 @@ function handleFileUpload(event) {
     profileForm.remove_image = false;
     profileForm.image = file;
 
-    // Cr�er l'aper�u
+    // Créer l'aperçu
     const reader = new FileReader();
     reader.onload = (e) => {
       imagePreview.value = e.target.result;
@@ -356,7 +355,7 @@ function removeImage() {
     fileInput.value.value = '';
   }
 
-  toast.info('Image will be removed when you save', {
+  toast.info('L\'image sera supprimée lorsque vous enregistrerez', {
     position: "top-right",
     timeout: 3000,
   });
@@ -381,13 +380,13 @@ const updateProfile = () => {
   profileForm.post(route('profile.update'), {
     forceFormData: true,
     onSuccess: () => {
-      toast.success('Profile updated successfully', {
+      toast.success('Profil mis à jour avec succès', {
         position: "top-right",
         timeout: 5000,
       });
     },
     onError: () => {
-      toast.error('There was an error updating your profile', {
+      toast.error('Une erreur est survenue lors de la mise à jour de votre profil', {
         position: "top-right",
         timeout: 5000,
       });
@@ -399,7 +398,7 @@ const updateProfile = () => {
 const updatePassword = () => {
   passwordForm.put(route('profile.change-password'), {
     onSuccess: () => {
-      toast.success('Password updated successfully', {
+      toast.success('Mot de passe mis à jour avec succès', {
         position: "top-right",
         timeout: 5000,
       });
@@ -407,7 +406,7 @@ const updatePassword = () => {
       passwordForm.reset();
     },
     onError: () => {
-      toast.error('There was an error updating your password', {
+      toast.error('Une erreur est survenue lors de la mise à jour de votre mot de passe', {
         position: "top-right",
         timeout: 5000,
       });

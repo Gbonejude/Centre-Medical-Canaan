@@ -30,3 +30,41 @@ Folder Names: Should be in lowercase (example : home). (Example:./container/Cont
 php artisan app:courses:unlock 
 php artisan app:update-course-progress
 php artisan schedule:work
+
+## 🛠️ Installation Initiale
+
+Pour installer toutes les dépendances et configurer le projet (première utilisation) :
+
+### Sur Windows
+Exécutez :
+- **`setup.bat`**
+
+### Via Terminal (Git Bash / WSL)
+Exécutez :
+```bash
+./setup.sh
+```
+
+## 🚀 Démarrage Rapide du Développement
+
+Pour lancer simultanément le backend, le frontend et la queue worker :
+
+### Sur Windows (Recommandé)
+Double-cliquez sur :
+- **`dev.bat`**
+
+### Via Terminal (Git Bash / WSL / Linux)
+Exécutez :
+```bash
+./start.sh
+```
+*Note : Utilisez `Ctrl+C` pour arrêter tous les processus.*
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+        user: 'marlene80@ethereal.email',
+        pass: 'uYA8dZNxzVWrmXUXtz'
+    }
+});

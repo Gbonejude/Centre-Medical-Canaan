@@ -12,7 +12,7 @@
             <li class="nav-item dropdown me-3">
                 <a href="#" class="dropdown-toggle nav-link position-relative d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" style="width: 35px; height: 35px;">
                     <i class="far fa-bell" style="font-size: 18px;"></i>
-                    <span v-if="notifications.length > 0" class="badge rounded-pill bg-danger position-absolute" 
+                    <span v-if="notifications.length > 0" class="badge rounded-pill bg-danger position-absolute"
                         style="top: -2px; right: -2px; font-size: 10px; padding: 2px 4px; border: 2px solid white;">
                         {{ notifications.length }}
                     </span>
@@ -24,8 +24,8 @@
                     <div class="drop-scroll"  >
                         <ul class="notification-list">
                             <li class="notification-message"  v-if="notifications.length > 0" >
-                                <div v-for="notification in notifications" :key="notification.id" 
-                                    @click="handleHeaderNotificationClick(notification)" 
+                                <div v-for="notification in notifications" :key="notification.id"
+                                    @click="handleHeaderNotificationClick(notification)"
                                     class="notification-link" style="cursor: pointer; display: block; padding: 10px; border-bottom: 1px solid #f0f0f0;">
                                     <div class="media" style="display: flex;">
                                         <span class="avatar">
@@ -51,7 +51,7 @@
                                 </div>
                             </li>
                             <li v-if="notifications.length === 0" class="notification-message text-center p-3">
-                                <span>No notifications yet ??</span>
+                                <span>Aucune notification pour le moment ??</span>
                             </li>
                         </ul>
                     </div>
@@ -78,10 +78,10 @@
 
                 <div class="dropdown-menu">
                     <Link :href="route('profile.index')" class="dropdown-item">
-                    <i class="fa fa-user me-2"></i> My Profile
+                    <i class="fa fa-user me-2"></i> Mon Profil
                     </Link>
                     <button class="dropdown-item" @click="submitLogout">
-                        <i class="fa fa-sign-out-alt me-2"></i>Logout</button>
+                        <i class="fa fa-sign-out-alt me-2"></i>Déconnexion</button>
                 </div>
             </li>
         </ul>
@@ -90,7 +90,7 @@
             <div class="dropdown me-3">
                 <a href="#" class="dropdown-toggle nav-link p-0 position-relative d-flex align-items-center justify-content-center" data-bs-toggle="dropdown" style="width: 35px; height: 35px;">
                     <i class="far fa-bell" style="font-size: 20px;"></i>
-                    <span v-if="notifications.length > 0" class="badge rounded-pill bg-danger position-absolute" 
+                    <span v-if="notifications.length > 0" class="badge rounded-pill bg-danger position-absolute"
                         style="top: -2px; right: -2px; font-size: 10px; padding: 2px 4px; border: 1.5px solid white;">
                         {{ notifications.length }}
                     </span>
@@ -117,12 +117,12 @@
                                 </div>
                             </li>
                             <li v-if="notifications.length === 0" class="notification-message text-center p-3">
-                                <span>No notifications yet</span>
+                                <span>Aucune notification</span>
                             </li>
                         </ul>
                     </div>
                     <div class="topnav-dropdown-footer">
-                        <Link :href="route('notifications.index')">View all Notifications</Link>
+                        <Link :href="route('notifications.index')">Voir toutes les notifications</Link>
                     </div>
                 </div>
             </div>
@@ -134,10 +134,10 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
                     <Link :href="route('profile.index')" class="dropdown-item">
-                    <i class="fa fa-user me-2"></i> My Profile
+                    <i class="fa fa-user me-2"></i> Mon Profil
                     </Link>
                     <button class="dropdown-item" @click="submitLogout">
-                        <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        <i class="fas fa-sign-out-alt me-2"></i> Déconnexion
                     </button>
                 </div>
             </div>
@@ -198,12 +198,12 @@ const form = reactive({});
 
 const submitLogout = () => {
     Swal.fire({
-        title: "Logout",
-        text: "Are you sure you want to log out?",
+        title: "Déconnexion",
+        text: "Êtes-vous sûr de vouloir vous déconnecter ?",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Yes, log me out",
-        cancelButtonText: "Cancel",
+        confirmButtonText: "Oui, me déconnecter",
+        cancelButtonText: "Annuler",
         confirmButtonColor: "#d33",
         cancelButtonColor: "#6c757d",
         reverseButtons: true,

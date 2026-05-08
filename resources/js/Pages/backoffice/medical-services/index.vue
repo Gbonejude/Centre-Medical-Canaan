@@ -66,10 +66,10 @@
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <Link :href="route('medical-services.show', service.id)" class="btn btn-outline-info btn-sm">
+                                            <Link :href="route('medical-services.show', service.uuid)" class="btn btn-outline-info btn-sm">
                                                 <i class="fa fa-eye"></i>
                                             </Link>
-                                            <Link :href="route('medical-services.edit', service.id)" class="btn btn-outline-primary btn-sm">
+                                            <Link :href="route('medical-services.edit', service.uuid)" class="btn btn-outline-primary btn-sm">
                                                 <i class="fa fa-edit"></i>
                                             </Link>
                                             <button @click="confirmDelete(service)" class="btn btn-outline-danger btn-sm">
@@ -115,7 +115,7 @@ const filteredServices = computed(() => {
 });
 
 function toggleStatus(service) {
-    router.patch(route('medical-services.toggle-status', service.id), {}, {
+    router.patch(route('medical-services.toggle-status', service.uuid), {}, {
         preserveScroll: true,
         onSuccess: () => toast.success('Statut mis à jour')
     });
@@ -130,7 +130,7 @@ function confirmDelete(service) {
         confirmButtonText: 'Oui, supprimer'
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('medical-services.destroy', service.id), {
+            router.delete(route('medical-services.destroy', service.uuid), {
                 onSuccess: () => toast.success('Service supprimé')
             });
         }

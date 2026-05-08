@@ -4,12 +4,10 @@ namespace App\Http\Controllers\BackOffice\Hospital;
 
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Inertia\Inertia;
 
 class PatientController extends Controller implements HasMiddleware
 {
@@ -27,24 +25,24 @@ class PatientController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function show($id)
+    public function show($uuid)
     {
-        $patient = Patient::with(['user', 'appointments.doctor'])->findOrFail($id);
-        
+        $patient = Patient::with(['user', 'appointments.doctor'])->where('uuid', $uuid)->firstOrFail();
+
         return Inertia::render('backoffice/patients/show', [
             'patient' => $patient,
         ]);
     }
 
-    public function destroy($id)
+    public function destroy($uuid)
     {
-        $patient = Patient::findOrFail($id);
+        $patient = Patient::where('uuid', $uuid)->firstOrFail();
         $user = $patient->user;
         $patient->delete();
         if ($user) {
             $user->delete();
         }
-        
+
         return back()->with('success', 'Patient supprimé avec succès.');
     }
 }

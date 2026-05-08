@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Patient extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Uuid;
+
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
 
     protected $fillable = [
         'user_id',

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\BackOffice\Notification;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
@@ -28,6 +27,7 @@ class NotificationController extends Controller
     public function markAllAsRead()
     {
         auth()->user()->unreadNotifications->markAsRead();
+
         return back()->with('success', 'All notifications marked as read.');
     }
 

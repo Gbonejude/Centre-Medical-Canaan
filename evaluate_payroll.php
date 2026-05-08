@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 auth()->login(\App\Models\User::find(2));
 
 $req = new Request(['start_date' => '2026-04-06', 'end_date' => '2026-04-19']);
-$c = new ScheduleController();
+$c = new ScheduleController;
 $resp = $c->payroll($req);
 
 $props = $resp->toResponse($req)->getOriginalContent()->getData()['page']['props'];

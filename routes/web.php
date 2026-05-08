@@ -3,15 +3,15 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\BackOffice\AdminController;
+use App\Http\Controllers\BackOffice\Hospital\AppointmentController;
+use App\Http\Controllers\BackOffice\Hospital\DoctorController;
+use App\Http\Controllers\BackOffice\Hospital\MedicalServiceController;
+use App\Http\Controllers\BackOffice\Hospital\SpecialtyController;
 use App\Http\Controllers\BackOffice\Notification\NotificationController;
 use App\Http\Controllers\BackOffice\ProfileController;
 use App\Http\Controllers\BackOffice\UserController;
-use App\Http\Controllers\BackOffice\Hospital\MedicalServiceController;
-use App\Http\Controllers\BackOffice\Hospital\SpecialtyController;
-use App\Http\Controllers\BackOffice\Hospital\DoctorController;
-use App\Http\Controllers\BackOffice\Hospital\AppointmentController;
-use App\Http\Controllers\FrontOffice\PagesController;
 use App\Http\Controllers\FrontOffice\Auth\AuthGuestController;
+use App\Http\Controllers\FrontOffice\PagesController;
 use Illuminate\Support\Facades\Route;
 
 // Extract domain from APP_URL
@@ -41,6 +41,10 @@ Route::domain($domain)->group(function () {
     Route::middleware('guest.auth')->group(function () {
         Route::get('/appointments/booking', [AppointmentController::class, 'create'])->name('front.appointments.create');
         Route::post('/appointments/booking', [AppointmentController::class, 'store'])->name('front.appointments.store');
+        Route::get('/appointments/{appointment}/edit', [AppointmentController::class, 'editFront'])->name('front.appointments.edit');
+        Route::put('/appointments/{appointment}', [AppointmentController::class, 'updateFront'])->name('front.appointments.update');
+        Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancelFront'])->name('front.appointments.cancel');
+        Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroyFront'])->name('front.appointments.destroy');
         Route::get('/my-appointments', [AppointmentController::class, 'mine'])->name('front.appointments.mine');
 
         // Patient Profile
@@ -118,8 +122,10 @@ Route::group(['domain' => 'admin.'.$domain], function () {
         Route::post('appointments/{appointment}/confirm', [AppointmentController::class, 'assignDoctor'])->name('appointments.confirm');
         Route::put('appointments/{appointment}/update-status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
 
-        Route::get('planning', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
-        Route::get('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
-        Route::put('planning/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');
+        Route::get('availabilities', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'index'])->name('schedules.index');
+        Route::get('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'edit'])->name('schedules.edit');
+        Route::put('availabilities/{doctor}', [\App\Http\Controllers\BackOffice\Hospital\DoctorScheduleController::class, 'update'])->name('schedules.update');
+
+        Route::get('planning', [\App\Http\Controllers\BackOffice\Hospital\PlanningController::class, 'index'])->name('planning.index');
     });
 });

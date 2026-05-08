@@ -39,11 +39,12 @@
                                     <option value="CONFIRMED">Confirmé</option>
                                     <option value="COMPLETED">Terminé</option>
                                     <option value="CANCELLED">Annulé</option>
+                                    <option value="NO_SHOW">Non présenté</option>
                                 </select>
                             </div>
 
                             <!-- Filtre Docteur (Multi-select) -->
-                            <div class="filter-item dropdown">
+                            <div v-if="!isDoctor" class="filter-item dropdown">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="doctorFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
                                     {{ doctorFilter.length > 0 ? (doctorFilter.length === 1 ? '1 médecin' : doctorFilter.length + ' médecins') : 'Tous les médecins' }}
                                 </button>
@@ -171,7 +172,11 @@
                                                 class="btn btn-sm btn-primary-gradient" title="Affecter un médecin">
                                                 <i class="fa fa-user-plus me-1"></i> Affecter
                                             </button>
-                                            <Link :href="route('appointments.show', app.id)"
+                                            <button v-if="app.status === 'CONFIRMED'" @click="markNoShow(app)"
+                                                class="btn btn-sm btn-outline-danger ms-2" title="Marquer absent (No-Show)">
+                                                <i class="fa fa-user-slash"></i>
+                                            </button>
+                                            <Link :href="route('appointments.show', app.uuid)"
                                                 class="btn btn-sm btn-outline-info ms-2" title="Voir détails">
                                                 <i class="fa fa-eye"></i>
                                             </Link>
@@ -238,14 +243,23 @@
                     <div class="doctor-list">
                         <div v-for="doctor in filteredDoctors" :key="doctor.id"
                             class="doctor-option"
-                            :class="{ selected: assignForm.doctor_id === doctor.id }"
-                            @click="assignForm.doctor_id = doctor.id">
+                            :class="{ 
+                                selected: assignForm.doctor_id === doctor.id,
+                                disabled: isDoctorBusy(doctor)
+                            }"
+                            @click="!isDoctorBusy(doctor) ? assignForm.doctor_id = doctor.id : null">
                             <div class="doctor-avatar">
                                 <img :src="doctor.user?.avatar_url || '/assets/img/user.jpg'" />
                             </div>
                             <div class="doctor-info">
-                                <div class="doctor-name">Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }} ({{ doctor.user?.phone || 'Pas de tél' }})</div>
-                                <div class="doctor-specialty small text-muted">{{ doctor.specialty?.name }}</div>
+                                <div class="doctor-name">
+                                    Dr. {{ doctor.user?.lastname }} {{ doctor.user?.firstname }}
+                                    <span v-if="isDoctorBusy(doctor)" class="badge bg-danger ms-2 small" style="font-size: 0.65rem;">Indisponible</span>
+                                </div>
+                                <div class="doctor-specialty small text-muted">
+                                    {{ (doctor.medical_service?.name || doctor.medicalService?.name) || 'Généraliste' }} 
+                                    <span v-if="doctor.specialty?.name">· {{ doctor.specialty?.name }}</span>
+                                </div>
                             </div>
                             <div class="check-icon" v-if="assignForm.doctor_id === doctor.id">
                                 <i class="fa fa-check-circle"></i>
@@ -274,8 +288,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
+import Swal from 'sweetalert2';
 import DatePickerComponent from '../../components/DatePickerComponent.vue';
 
 const props = defineProps({
@@ -322,7 +337,7 @@ const allAppointments = computed(() => {
     return props.appointments.filter(a => {
         if (currentTab.value === 'requests')  return !a.doctor_id && a.status === 'PENDING';
         if (currentTab.value === 'scheduled') return a.doctor_id && ['PENDING', 'CONFIRMED'].includes(a.status);
-        if (currentTab.value === 'history')   return ['COMPLETED', 'CANCELLED'].includes(a.status);
+        if (currentTab.value === 'history')   return ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status);
         if (currentTab.value === 'today')     return a.appointment_date?.startsWith(todayStr);
         return true; // 'all'
     });
@@ -377,35 +392,29 @@ function resetFilters() {
 
 // ── Doctors filtered by service and availability ──
 const filteredDoctors = computed(() => {
-    if (!selectedApp.value) return [];
+    if (!selectedApp.value || !props.availableDoctors) return [];
     
-    const appDate = selectedApp.value.appointment_date;
-    const appTime = selectedApp.value.appointment_time.substring(0, 5); // HH:MM
-    
-    // Day of week
-    const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dateObj = new Date(appDate);
-    const dayKey = daysMap[dateObj.getDay()];
+    const serviceId = selectedApp.value.medical_service_id;
+    const isOtherService = selectedApp.value.medical_service?.name === 'Autres';
 
+    // On garde tous les médecins du service pour pouvoir afficher "Indisponible"
     return props.availableDoctors.filter(d => {
-        // Filter by service
-        const hasService = d.medical_service_id === selectedApp.value.medical_service_id;
-        if (!hasService) return false;
-
-        // Filter by availability (Planning)
-        if (!d.availability || !d.availability[dayKey] || !d.availability[dayKey].enabled) {
-            return false;
-        }
-
-        const slots = d.availability[dayKey].slots;
-        if (!slots || slots.length === 0) return false;
-
-        // Check if appointment time falls within any of the doctor's slots
-        return slots.some(slot => {
-            return appTime >= slot.start && appTime <= slot.end;
-        });
+        if (isOtherService) return true;
+        return d.medical_service_id === serviceId;
     });
 });
+
+function isDoctorBusy(doctor) {
+    if (!selectedApp.value) return false;
+    
+    return props.appointments.some(a => 
+        a.doctor_id === doctor.user_id && 
+        a.appointment_date === selectedApp.value.appointment_date && 
+        a.appointment_time === selectedApp.value.appointment_time &&
+        ['PENDING', 'CONFIRMED'].includes(a.status) &&
+        a.id !== selectedApp.value.id
+    );
+}
 
 function openAssignModal(app) {
     selectedApp.value = app;
@@ -419,10 +428,37 @@ function closeModal() {
 }
 
 function submitAssignment() {
-    assignForm.post(route('appointments.assign', selectedApp.value.id), {
+    assignForm.post(route('appointments.assign', selectedApp.value.uuid), {
         onSuccess: () => {
             toast.success('Médecin affecté avec succès');
             closeModal();
+        }
+    });
+}
+
+function markNoShow(app) {
+    Swal.fire({
+        title: 'Patient absent ?',
+        text: 'Veuillez indiquer le motif de l\'absence du patient :',
+        input: 'textarea',
+        inputPlaceholder: 'Ex: Patient ne s\'est pas présenté, injoignable...',
+        showCancelButton: true,
+        confirmButtonText: 'Confirmer l\'absence',
+        confirmButtonColor: '#f64e60',
+        cancelButtonText: 'Annuler',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Le motif est obligatoire !'
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.put(route('appointments.update-status', app.uuid), { 
+                status: 'NO_SHOW', 
+                notes: result.value 
+            }, {
+                onSuccess: () => toast.success('Patient marqué comme absent')
+            });
         }
     });
 }
@@ -442,7 +478,8 @@ function translateStatus(status) {
         'CONFIRMED': 'Confirmé',
         'COMPLETED': 'Terminé',
         'CANCELLED': 'Annulé',
-        'POSTPONED': 'Reporté'
+        'POSTPONED': 'Reporté',
+        'NO_SHOW':   'Absent'
     };
     return statuses[status] || status;
 }
@@ -547,8 +584,9 @@ $border-radius: 0.75rem;
 .status-badge {
     padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
     &.pending   { background-color: rgba($warning-color, 0.1); color: $warning-color; }
-    &.confirmed { background-color: rgba($primary-color, 0.1); color: $primary-color; }
-    &.completed { background-color: rgba($success-color, 0.1); color: $success-color; }
+    &.confirmed { background: rgba($primary-color, 0.1); color: $primary-color; }
+    &.completed { background: rgba($success-color, 0.1); color: $success-color; }
+    &.noshow    { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
     &.cancelled { background-color: rgba($danger-color,  0.1); color: $danger-color;  }
 }
 
@@ -575,8 +613,14 @@ $border-radius: 0.75rem;
     .doctor-option {
         display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid #f1f1f1; cursor: pointer; transition: all 0.2s;
         &:last-child { border-bottom: none; }
-        &:hover { background: #f8f9ff; }
+        &:hover:not(.disabled) { background: #f8f9ff; }
         &.selected { background: rgba($primary-color, 0.05); border-left: 4px solid $primary-color; }
+        &.disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            background: #fdfdfd;
+            &:hover { background: #fdfdfd; }
+        }
         .doctor-avatar { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; margin-right: 0.75rem; img { width: 100%; height: 100%; object-fit: cover; } }
         .doctor-name { font-weight: 600; color: #181c32; }
         .check-icon { margin-left: auto; color: $primary-color; font-size: 1.2rem; }

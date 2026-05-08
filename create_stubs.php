@@ -1,4 +1,5 @@
 <?php
+
 // Stub models needed by routes/controllers that reference deleted models
 // These are minimal stubs to prevent autoloader errors
 
@@ -37,7 +38,7 @@ $stubs = [
 
 foreach ($stubs as $name => $content) {
     $path = "app/Models/{$name}.php";
-    if (!file_exists($path)) {
+    if (! file_exists($path)) {
         file_put_contents($path, $content);
         echo "Created {$path}\n";
     } else {

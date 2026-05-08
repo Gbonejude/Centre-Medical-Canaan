@@ -1,13 +1,13 @@
 <template>
     <Head>
-        <title>Reset Password</title>
+        <title>Réinitialiser le mot de passe</title>
     </Head>
     <section class="login-section">
         <div class="login-box">
             <h1>Centre Médical Canaan</h1>
-            <h5 class="mb-3 text-center text-muted">Create New Password</h5>
+            <h5 class="mb-3 text-center text-muted">Créer un nouveau mot de passe</h5>
             <p class="text-center text-muted mb-4">
-                Please enter your new password below.
+                Veuillez entrer votre nouveau mot de passe ci-dessous.
             </p>
 
             <div v-if="$page.props.flash?.success" class="alert alert-success mb-3" role="alert">
@@ -20,7 +20,7 @@
 
             <form @submit.prevent="resetPassword">
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email Address</label>
+                    <label for="email" class="form-label">Adresse E-mail</label>
                     <input
                         type="email"
                         class="form-control"
@@ -38,7 +38,7 @@
                             :type="showPassword ? 'text' : 'password'"
                             class="form-control"
                             id="password"
-                            placeholder="Enter new password"
+                            placeholder="Entrez le nouveau mot de passe"
                             v-model="resetForm.password"
                             :disabled="resetForm.processing"
                         >
@@ -50,18 +50,18 @@
                         <span class="text-danger">{{ errors.password[0] }}</span>
                     </div>
                     <small class="text-muted">
-                        Password must be at least 8 characters and include uppercase, lowercase, numbers, and symbols.
+                        Le mot de passe doit contenir au moins 8 caractères et inclure des majuscules, des minuscules, des chiffres et des symboles.
                     </small>
                 </div>
 
                 <div class="mb-3">
-                    <label for="password_confirmation" class="form-label">Confirm Password</label>
+                    <label for="password_confirmation" class="form-label">Confirmer le mot de passe</label>
                     <div class="password-wrapper">
                         <input
                             :type="showPasswordConfirm ? 'text' : 'password'"
                             class="form-control"
                             id="password_confirmation"
-                            placeholder="Confirm new password"
+                            placeholder="Confirmez le nouveau mot de passe"
                             v-model="resetForm.password_confirmation"
                             :disabled="resetForm.processing"
                         >
@@ -77,19 +77,19 @@
                 <button type="submit" class="btn btn-green w-100 mb-3" :disabled="resetForm.processing">
                     <span v-if="resetForm.processing" class="loader-content">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
-                            <span class="visually-hidden">Loading...</span>
+                            <span class="visually-hidden">Chargement...</span>
                         </div>
-                        Resetting...
+                        Réinitialisation...
                     </span>
                     <span v-else class="normal-content">
                         <i class="fas fa-check me-2"></i>
-                        Reset Password
+                        Réinitialiser le mot de passe
                     </span>
                 </button>
 
                 <div class="text-center">
                     <Link :href="route('auth.loginForm')" class="back-to-login">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Login
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la connexion
                     </Link>
                 </div>
             </form>

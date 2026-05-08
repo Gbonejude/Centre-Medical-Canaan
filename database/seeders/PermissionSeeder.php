@@ -24,7 +24,7 @@ class PermissionSeeder extends Seeder
             Permission::updateOrCreate(
                 ['name' => $permission],
                 [
-                    'name'       => $permission,
+                    'name' => $permission,
                     'guard_name' => 'web',
                     'is_customer' => $permission === 'PATIENT',
                 ]

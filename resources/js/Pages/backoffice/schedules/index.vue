@@ -1,6 +1,6 @@
 <template>
     <Head>
-        <title>Planning des Médecins | CMC</title>
+        <title>Disponibilités des Médecins | CMC</title>
     </Head>
 
     <div class="content-wrapper">
@@ -10,7 +10,7 @@
                     <div class="header-title">
                         <h4 class="page-title">
                             <i class="fa fa-calendar-alt me-2"></i>
-                            Planning & Disponibilités
+                            Disponibilités & Horaires
                         </h4>
                         <p class="text-muted">Configurez les horaires de travail de l'équipe médicale</p>
                     </div>
@@ -52,7 +52,7 @@
                             </div>
 
                             <div class="card-actions mt-4">
-                                <Link :href="route('schedules.edit', doctor.id)" class="btn btn-primary w-100">
+                                <Link :href="route('schedules.edit', doctor.uuid)" class="btn btn-primary w-100">
                                     <i class="fa fa-clock me-2"></i> Gérer les horaires
                                 </Link>
                             </div>

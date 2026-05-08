@@ -1,26 +1,26 @@
 <x-mail::message>
-# Password Successfully Reset
+# Mot de passe réinitialisé avec succès
 
-Hello!
+Bonjour !
 
-This email confirms that your password for {{ config('app.name') }} has been successfully reset.
+Cet email confirme que votre mot de passe pour {{ config('app.name') }} a été réinitialisé avec succès.
 
-**Email**: {{ $email }}
+**Email** : {{ $email }}
 
-You can now log in to your account using your new password.
+Vous pouvez maintenant vous connecter à votre compte en utilisant votre nouveau mot de passe.
 
 <x-mail::button :url="route('auth.loginForm')">
-    Login to Your Account
+    Se connecter à votre compte
 </x-mail::button>
 
-If you did not make this change or believe an unauthorized person has accessed your account, please contact our support team immediately.
+Si vous n'avez pas effectué ce changement ou si vous pensez qu'une personne non autorisée a accédé à votre compte, veuillez contacter notre équipe support immédiatement.
 
-For your security, we recommend:
-- Using a strong, unique password
-- Changing your password regularly
-- Not sharing your password with anyone
+Pour votre sécurité, nous vous recommandons :
+- D'utiliser un mot de passe fort et unique
+- De modifier votre mot de passe régulièrement
+- De ne partager votre mot de passe avec personne
 
-Thanks,<br>
+Cordialement,<br>
 <br>
-Service Support - {{ config('app.name') }}
+Support Client - {{ config('app.name') }}
 </x-mail::message>

@@ -38,9 +38,9 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'firstname' => ['required', 'string', 'max:255'],
-            'lastname'  => ['required', 'string', 'max:255'],
-            'email'     => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'phone'     => ['nullable', 'string', 'max:20'],
+            'lastname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
         $user->update($validated);
@@ -56,7 +56,7 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password'         => ['required', Password::defaults(), 'confirmed'],
+            'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
         auth()->user()->update([

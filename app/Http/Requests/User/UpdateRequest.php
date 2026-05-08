@@ -24,17 +24,17 @@ final class UpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lastname'      => ['required', 'string', 'max:255'],
-            'firstname'     => ['required', 'string', 'max:255'],
-            'email'         => ['nullable', 'email:rfc,dns', 'max:255'],
-            'phone'         => ['nullable', 'string'],
-            'gender'        => ['nullable', 'string'],
-            'active'        => ['nullable', 'boolean'],
-            'password'      => ['nullable', 'string', 'min:8', 'confirmed'],
-            'birthday'      => ['nullable', 'date'],
-            'image'         => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,svg', 'max:2048'],
-            'remove_image'  => ['nullable', 'boolean'],
-            'permissions'   => ['nullable', 'array'],
+            'lastname' => ['required', 'string', 'max:255'],
+            'firstname' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email:rfc,dns', 'max:255'],
+            'phone' => ['nullable', 'string'],
+            'gender' => ['nullable', 'string'],
+            'active' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'birthday' => ['nullable', 'date'],
+            'image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,svg', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
+            'permissions' => ['nullable', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ];
     }

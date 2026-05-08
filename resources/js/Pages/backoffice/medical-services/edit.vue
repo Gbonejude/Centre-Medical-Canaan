@@ -127,7 +127,7 @@ const form = useForm({
 });
 
 function update() {
-    form.put(route("medical-services.update", props.service.id), {
+    form.put(route("medical-services.update", props.service.uuid), {
         onSuccess: () => {
             toast.success('Service médical mis à jour avec succès');
         },

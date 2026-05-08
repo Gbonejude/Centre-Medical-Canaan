@@ -24,14 +24,14 @@ final class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lastname'  => ['required', 'string', 'max:255'],
+            'lastname' => ['required', 'string', 'max:255'],
             'firstname' => ['required', 'string', 'max:255'],
-            'email'     => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
-            'phone'     => ['required', 'string', 'unique:users,phone'],
-            'gender'    => ['required', 'string'],
-            'active'    => ['nullable', 'boolean'],
-            'birthday'  => ['nullable', 'date'],
-            'image'     => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,svg', 'max:2048'],
+            'email' => ['required', 'email:rfc,dns', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'unique:users,phone'],
+            'gender' => ['required', 'string'],
+            'active' => ['nullable', 'boolean'],
+            'birthday' => ['nullable', 'date'],
+            'image' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,gif,svg', 'max:2048'],
         ];
     }
 

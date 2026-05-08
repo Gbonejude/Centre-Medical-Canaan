@@ -22,7 +22,6 @@ class DefaultUser extends Seeder
             [
                 'lastname' => 'John',
                 'firstname' => 'Doe',
-                'username' => 'Admin',
                 'gender' => 'male',
                 'phone' => '+22890436678',
                 'email_verified_at' => now(),
@@ -38,7 +37,6 @@ class DefaultUser extends Seeder
                 'lastname' => 'Gbone',
                 'phone' => '+22890510465',
                 'gender' => 'male',
-                'username' => 'Judas15',
                 'password' => 'Password2025',
             ],
             [
@@ -47,7 +45,6 @@ class DefaultUser extends Seeder
                 'lastname' => 'Ahadji',
                 'phone' => '+22898316753',
                 'gender' => 'male',
-                'username' => 'Mathieu12',
                 'password' => 'Password2025',
             ],
         ];
@@ -60,7 +57,6 @@ class DefaultUser extends Seeder
                     'lastname' => $userData['lastname'],
                     'phone' => $userData['phone'],
                     'gender' => $userData['gender'],
-                    'username' => $userData['username'],
                     'email_verified_at' => now(),
                     'password' => Hash::make($userData['password']),
                     'remember_token' => Str::random(10),

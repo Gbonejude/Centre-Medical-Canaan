@@ -18,7 +18,7 @@ class PatientFactory extends Factory
             'gender' => $this->faker->randomElement(['Masculin', 'Féminin']),
             'blood_group' => $this->faker->randomElement(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
             'address' => $this->faker->address,
-            'emergency_contact' => $this->faker->name . ' (' . $this->faker->phoneNumber . ')',
+            'emergency_contact' => $this->faker->name.' ('.$this->faker->phoneNumber.')',
             'medical_history' => $this->faker->text(300),
         ];
     }

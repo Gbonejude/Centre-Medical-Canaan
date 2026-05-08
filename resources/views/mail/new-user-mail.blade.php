@@ -1,20 +1,20 @@
 <x-mail::message>
-# Hello!
+# Bonjour !
 
-Welcome to {{ config('app.name') }}!
+Bienvenue sur {{ config('app.name') }} !
 
-Your account has been successfully created. Here are your login details:<br><br>
-**Email**: {{ $email }}<br>
-**Temporary Password**: {{ $password }}<br>
+Votre compte a été créé avec succès. Voici vos informations de connexion :<br><br>
+**Email** : {{ $email }}<br>
+**Mot de passe temporaire** : {{ $password }}<br>
 
 <x-mail::button :url="route('auth.loginForm')">
-    Login
+    Se connecter
 </x-mail::button>
-Please login and change your password as soon as possible for security reasons.
+Veuillez vous connecter et modifier votre mot de passe dès que possible pour des raisons de sécurité.
 
-Thank you for choosing Canaan Care Services. If you have any questions, please contact our support team.
+Merci d'avoir choisi le Centre Medical Canaan. Si vous avez des questions, n'hésitez pas à contacter notre équipe support.
 
-Thanks,<br>
+Cordialement,<br>
 <br>
-Service Support - {{ config('app.name') }}
+Support Client - {{ config('app.name') }}
 </x-mail::message>
