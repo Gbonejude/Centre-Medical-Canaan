@@ -99,10 +99,20 @@
                     <!-- Mon Planning (Médecin Uniquement) -->
                     <li
                         v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
+                        :class="{ active: isActiveLink('/planning') }"
+                    >
+                        <Link :href="route('planning.index')" @click="closeSidebarOnMobile">
+                            <i class="fa fa-calendar-alt"></i><span>Mon Planning</span>
+                        </Link>
+                    </li>
+
+                    <!-- Mes Disponibilités (Médecin Uniquement) -->
+                    <li
+                        v-if="userHasPermission([PERMISSIONS.DOCTOR]) && !userHasPermission([PERMISSIONS.SUPER_ADMIN, PERMISSIONS.ADMIN, PERMISSIONS.RECEPTIONIST])"
                         :class="{ active: isActiveLink('/availabilities') }"
                     >
                         <Link :href="route('schedules.index')" @click="closeSidebarOnMobile">
-                            <i class="fa fa-calendar-alt"></i><span>Mes Disponibilités</span>
+                            <i class="fa fa-calendar-day"></i><span>Mes Disponibilités</span>
                         </Link>
                     </li>
 
