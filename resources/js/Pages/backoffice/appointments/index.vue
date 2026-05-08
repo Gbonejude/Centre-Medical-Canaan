@@ -39,6 +39,7 @@
                                     <option value="CONFIRMED">Confirmé</option>
                                     <option value="COMPLETED">Terminé</option>
                                     <option value="CANCELLED">Annulé</option>
+                                    <option value="NO_SHOW">Non présenté</option>
                                 </select>
                             </div>
 
@@ -171,6 +172,10 @@
                                                 class="btn btn-sm btn-primary-gradient" title="Affecter un médecin">
                                                 <i class="fa fa-user-plus me-1"></i> Affecter
                                             </button>
+                                            <button v-if="app.status === 'CONFIRMED'" @click="markNoShow(app)"
+                                                class="btn btn-sm btn-outline-danger ms-2" title="Marquer absent (No-Show)">
+                                                <i class="fa fa-user-slash"></i>
+                                            </button>
                                             <Link :href="route('appointments.show', app.uuid)"
                                                 class="btn btn-sm btn-outline-info ms-2" title="Voir détails">
                                                 <i class="fa fa-eye"></i>
@@ -283,8 +288,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useToast } from "vue-toastification";
+import Swal from 'sweetalert2';
 import DatePickerComponent from '../../components/DatePickerComponent.vue';
 
 const props = defineProps({
@@ -331,7 +337,7 @@ const allAppointments = computed(() => {
     return props.appointments.filter(a => {
         if (currentTab.value === 'requests')  return !a.doctor_id && a.status === 'PENDING';
         if (currentTab.value === 'scheduled') return a.doctor_id && ['PENDING', 'CONFIRMED'].includes(a.status);
-        if (currentTab.value === 'history')   return ['COMPLETED', 'CANCELLED'].includes(a.status);
+        if (currentTab.value === 'history')   return ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(a.status);
         if (currentTab.value === 'today')     return a.appointment_date?.startsWith(todayStr);
         return true; // 'all'
     });
@@ -430,6 +436,33 @@ function submitAssignment() {
     });
 }
 
+function markNoShow(app) {
+    Swal.fire({
+        title: 'Patient absent ?',
+        text: 'Veuillez indiquer le motif de l\'absence du patient :',
+        input: 'textarea',
+        inputPlaceholder: 'Ex: Patient ne s\'est pas présenté, injoignable...',
+        showCancelButton: true,
+        confirmButtonText: 'Confirmer l\'absence',
+        confirmButtonColor: '#f64e60',
+        cancelButtonText: 'Annuler',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Le motif est obligatoire !'
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.put(route('appointments.update-status', app.uuid), { 
+                status: 'NO_SHOW', 
+                notes: result.value 
+            }, {
+                onSuccess: () => toast.success('Patient marqué comme absent')
+            });
+        }
+    });
+}
+
 function formatDate(date) {
     if (!date) return '—';
     return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -445,7 +478,8 @@ function translateStatus(status) {
         'CONFIRMED': 'Confirmé',
         'COMPLETED': 'Terminé',
         'CANCELLED': 'Annulé',
-        'POSTPONED': 'Reporté'
+        'POSTPONED': 'Reporté',
+        'NO_SHOW':   'Absent'
     };
     return statuses[status] || status;
 }
@@ -550,8 +584,9 @@ $border-radius: 0.75rem;
 .status-badge {
     padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
     &.pending   { background-color: rgba($warning-color, 0.1); color: $warning-color; }
-    &.confirmed { background-color: rgba($primary-color, 0.1); color: $primary-color; }
-    &.completed { background-color: rgba($success-color, 0.1); color: $success-color; }
+    &.confirmed { background: rgba($primary-color, 0.1); color: $primary-color; }
+    &.completed { background: rgba($success-color, 0.1); color: $success-color; }
+    &.noshow    { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
     &.cancelled { background-color: rgba($danger-color,  0.1); color: $danger-color;  }
 }
 

@@ -130,6 +130,9 @@
                                 
                                 <!-- Annuler/Reporter (Seulement pour réception/admin) -->
                                 <template v-if="!isDoctor">
+                                    <button v-if="appointment.status === 'CONFIRMED'" @click="updateStatus('NO_SHOW')" class="btn btn-danger">
+                                        <i class="fa fa-user-slash me-1"></i> Absent (No-Show)
+                                    </button>
                                     <button v-if="['CONFIRMED', 'PENDING'].includes(appointment.status)" @click="updateStatus('CANCELLED')" class="btn btn-outline-danger">
                                         <i class="fa fa-times-circle me-1"></i> Annuler le Rendez-vous
                                     </button>
@@ -258,18 +261,20 @@ function updateStatus(newStatus) {
         postponeForm.notes = '';
         showPostponeModal.value = true;
         return;
-    } else if (newStatus === 'CANCELLED') {
+    } else if (newStatus === 'CANCELLED' || newStatus === 'NO_SHOW') {
+        const isNoShow = newStatus === 'NO_SHOW';
         Swal.fire({
-            title: 'Motif de l\'annulation',
-            text: 'Veuillez indiquer pourquoi vous annulez ce rendez-vous :',
+            title: isNoShow ? 'Motif de l\'absence' : 'Motif de l\'annulation',
+            text: isNoShow ? 'Veuillez indiquer pourquoi le patient est absent :' : 'Veuillez indiquer pourquoi vous annulez ce rendez-vous :',
             input: 'textarea',
             inputPlaceholder: 'Entrez le motif ici...',
             showCancelButton: true,
-            confirmButtonText: 'Confirmer l\'annulation',
+            confirmButtonText: isNoShow ? 'Confirmer l\'absence' : 'Confirmer l\'annulation',
+            confirmButtonColor: isNoShow ? '#f64e60' : '#d33',
             cancelButtonText: 'Retour',
             inputValidator: (value) => {
                 if (!value) {
-                    return 'Le motif est obligatoire pour annuler !'
+                    return 'Le motif est obligatoire !'
                 }
             }
         }).then((result) => {
@@ -278,7 +283,7 @@ function updateStatus(newStatus) {
                     status: newStatus, 
                     notes: result.value 
                 }, {
-                    onSuccess: () => toast.success('Rendez-vous annulé')
+                    onSuccess: () => toast.success(isNoShow ? 'Patient marqué comme absent' : 'Rendez-vous annulé')
                 });
             }
         });
@@ -316,7 +321,8 @@ function translateStatus(status) {
         'CONFIRMED': 'Confirmé',
         'COMPLETED': 'Terminé',
         'CANCELLED': 'Annulé',
-        'POSTPONED': 'Reporté'
+        'POSTPONED': 'Reporté',
+        'NO_SHOW': 'Non présenté'
     };
     return statuses[status] || status;
 }

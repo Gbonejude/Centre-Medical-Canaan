@@ -35,16 +35,74 @@ class AdminController extends Controller
             ->get()
             ->map(fn ($a) => [
                 'id' => $a->id,
+                'uuid' => $a->uuid,
                 'patient' => $a->patient
-                    ? ($a->patient->firstname.' '.$a->patient->lastname)
+                    ? ($a->patient->lastname.' '.$a->patient->firstname)
                     : 'N/A',
                 'doctor' => $a->doctor
-                    ? ('Dr. '.$a->doctor->firstname.' '.$a->doctor->lastname)
+                    ? ('Dr. '.$a->doctor->lastname)
                     : 'Non assigné',
                 'service' => $a->medicalService?->name ?? 'N/A',
-                'appointment_time' => $a->appointment_time,
+                'time' => $a->appointment_time ? substr($a->appointment_time, 0, 5) : '--:--',
                 'status_key' => strtolower($a->status->value),
-                'status' => $a->status_label,
+                'status' => $a->status->label(),
+            ]);
+
+        // --- Graphiques ---
+        // 1. Tendance (7 derniers jours)
+        $startDate = now()->subDays(6)->startOfDay();
+        $endDate = now()->endOfDay();
+        $rawTrends = Appointment::selectRaw('DATE(appointment_date) as date, COUNT(*) as count')
+            ->whereBetween('appointment_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->groupBy('date')
+            ->pluck('count', 'date')
+            ->toArray();
+        $trends = [];
+        for ($i = 0; $i < 7; $i++) {
+            $date = now()->subDays(6 - $i)->toDateString();
+            $trends[] = ['date' => $date, 'count' => $rawTrends[$date] ?? 0];
+        }
+
+        // 2. Répartition par Service
+        $servicesStats = Appointment::selectRaw('medical_services.name as label, COUNT(appointments.id) as count')
+            ->join('medical_services', 'appointments.medical_service_id', '=', 'medical_services.id')
+            ->groupBy('medical_services.name')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => ['label' => $item->label, 'count' => $item->count]);
+
+        // 3. Top Médecins
+        $topDoctors = Appointment::selectRaw('users.firstname, users.lastname, COUNT(appointments.id) as count')
+            ->join('users', 'appointments.doctor_id', '=', 'users.id')
+            ->groupBy('users.id', 'users.firstname', 'users.lastname')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'label' => "Dr. {$item->lastname}",
+                'count' => $item->count
+            ]);
+
+        // 4. Répartition par Statut (Pour Donut)
+        $statusDistribution = Appointment::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get()
+            ->map(fn($item) => [
+                'label' => $item->status->label(),
+                'status_key' => strtolower($item->status->value),
+                'count' => $item->count
+            ]);
+
+        // 5. Activité par Heure (Pic d'affluence)
+        $hourlyStats = Appointment::selectRaw('HOUR(appointment_time) as hour, COUNT(*) as count')
+            ->whereNotNull('appointment_time')
+            ->groupBy('hour')
+            ->orderBy('hour')
+            ->get()
+            ->map(fn($item) => [
+                'hour' => str_pad($item->hour, 2, '0', STR_PAD_LEFT) . 'h',
+                'count' => $item->count
             ]);
 
         $staffPermissionsMap = Permission::whereNotIn('name', ['SUPER ADMIN', 'PATIENT'])
@@ -54,16 +112,21 @@ class AdminController extends Controller
 
         return inertia('backoffice/dashboard/index', [
             'stats' => [
-                'doctor_count' => $doctorCount,
-                'receptionist_count' => $receptionistCount,
-                'patient_count' => $patientCount,
+                'total_doctors' => $doctorCount,
+                'total_patients' => $patientCount,
+                'total_services' => $activeServices,
                 'total_appointments' => $totalAppointments,
                 'pending_appointments' => $pendingAppointments,
                 'confirmed_appointments' => $confirmedAppointments,
                 'completed_appointments' => $completedAppointments,
                 'cancelled_appointments' => $cancelledAppointments,
-                'services_count' => $servicesCount,
-                'active_services' => $activeServices,
+            ],
+            'charts' => [
+                'trends' => $trends,
+                'services' => $servicesStats,
+                'top_doctors' => $topDoctors,
+                'statuses' => $statusDistribution,
+                'hourly' => $hourlyStats,
             ],
             'todayAppointments' => $todayAppointments,
             'permissionsMap' => $staffPermissionsMap,

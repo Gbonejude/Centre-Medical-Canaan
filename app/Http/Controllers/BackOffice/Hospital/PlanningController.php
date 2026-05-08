@@ -16,8 +16,14 @@ class PlanningController extends Controller
     {
         Carbon::setLocale('fr');
 
-        $startDate = now()->subMonths(3)->startOfWeek();
-        $endDate = now()->addMonths(3)->endOfWeek();
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        // We fetch a range spanning from the beginning of the previous month to the end of the next month
+        // to cover edge days in the calendar grid.
+        $targetDate = Carbon::createFromDate($year, $month, 1);
+        $startDate = $targetDate->copy()->subMonth()->startOfMonth();
+        $endDate = $targetDate->copy()->addMonth()->endOfMonth();
 
         $user = auth()->user();
         $isDoctorOnly = $user->hasPermissionTo('DOCTOR') && ! $user->hasAnyPermission(['ADMIN', 'SUPER ADMIN', 'RECEPTIONIST']);
@@ -34,9 +40,12 @@ class PlanningController extends Controller
         $appointments = Appointment::with(['patient', 'doctor'])
             ->whereIn('doctor_id', $doctorIds)
             ->whereBetween('appointment_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->whereIn('status', ['PENDING', 'CONFIRMED', 'COMPLETED'])
+            ->whereIn('status', ['PENDING', 'CONFIRMED', 'COMPLETED', 'NO_SHOW'])
             ->get()
-            ->groupBy(['doctor_id', 'appointment_date']);
+            ->groupBy('doctor_id')
+            ->map(fn ($group) => $group->groupBy(
+                fn ($app) => \Carbon\Carbon::parse($app->appointment_date)->format('Y-m-d')
+            ));
 
         $services = MedicalService::where('is_active', true)->orderBy('name')->get();
 

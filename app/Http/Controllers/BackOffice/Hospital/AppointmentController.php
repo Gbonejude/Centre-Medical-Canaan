@@ -220,7 +220,7 @@ class AppointmentController extends Controller implements HasMiddleware
             abort(403, 'Unauthorized action.');
         }
 
-        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED'])) {
+        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED', 'NO_SHOW'])) {
             return back()->with('error', 'Ce rendez-vous ne peut plus être annulé.');
         }
 
@@ -237,7 +237,7 @@ class AppointmentController extends Controller implements HasMiddleware
             abort(403, 'Unauthorized action.');
         }
 
-        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED'])) {
+        if (in_array($appointment->status->value, ['COMPLETED', 'CANCELLED', 'NO_SHOW'])) {
             return redirect()->route('front.appointments.mine')->with('error', 'Ce rendez-vous ne peut plus être modifié.');
         }
 
